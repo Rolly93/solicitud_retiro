@@ -1,0 +1,14 @@
+
+{
+  "name": "Checklist-DO",
+  "fields": [
+    { "name": "referencia",   "label": "Referencia",     "page": 0, "x": 0, "y": 0, "unit": "mm", "font": "Helvetica", "size": 10 },
+    { "name": "aduana",       "label": "Aduana",         "page": 0, "x": 0, "y": 0, "unit": "mm", "font": "Helvetica", "size": 10 },
+    { "name": "bultos",       "label": "Bultos",         "page": 0, "x": 0, "y": 0, "unit": "mm", "font": "Helvetica-Bold", "size": 10 },
+    { "name": "peso",         "label": "Peso",           "page": 0, "x": 0, "y": 0, "unit": "mm", "font": "Helvetica", "size": 10 },
+    { "name": "placas",       "label": "Placas",         "page": 0, "x": 0, "y": 0, "unit": "mm", "font": "Helvetica", "size": 10 },
+    { "name": "cliente",      "label": "Cliente",        "page": 0, "x": 0, "y": 0, "unit": "mm", "font": "Helvetica", "size": 9 },
+    { "name": "proveedor",    "label": "Proveedor",      "page": 0, "x": 0, "y": 0, "unit": "mm", "font": "Helvetica", "size": 9 },
+    { "name": "observaciones","label": "Observaciones",  "page": 0, "x": 0, "y": 0, "unit": "mm", "font": "Helvetica", "size": 9 }
+  ]
+}

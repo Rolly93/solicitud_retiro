@@ -1,0 +1,14 @@
+{
+    "name" :"tnl-solicitud-retiro",
+    "fields":[
+        { "name":"referencia", "label":"Referencia", "page":0, "x":0, "y":0, "unit":"mm", "font":"Helvetica", "size":10 },
+        { "name":"fecha", "label":"Fecha", "page":0, "x":0, "y":0, "unit":"mm", "font":"Helvetica", "size":10 },
+        { "name":"cliente", "label":"Cliente", "page":0, "x":0, "y":0, "unit":"mm", "font":"Helvetica", "size":10 },
+        { "name":"pedimento", "label":"Pedimento", "page":0, "x":0, "y":0, "unit":"mm", "font":"Helvetica", "size":10 },
+        { "name":"talon", "label":"Talón", "page":0, "x":0, "y":0, "unit":"mm", "font":"Helvetica", "size":10 },
+        { "name":"guia", "label": "Guia", "page":0, "x":0, "y":0, "unit":"mm", "font":"Helvetica", "size":10 },
+        { "name":"autoriza", "label":"Autoriza", "page":0, "x":0, "y":0, "unit":"mm", "font":"Helvetica", "size":10 },
+        { "name":"linea_transporte", "label":"Línea de Transporte", "page":0, "x":0, "y":0, "unit":"mm", "font":"Helvetica", "size":10 },
+        { "name":"bultos", "label":"Bultos", "page":0, "x":0, "y":0, "unit":"mm", "font":"Helvetica", "size":10 }
+        ]
+}
