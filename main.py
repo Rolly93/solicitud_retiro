@@ -14,10 +14,12 @@ from overlay import generar_pdf_con_overlay
 APP_DIR = Path(__file__).parent
 TEMPLATES_DIR = APP_DIR / "templates"
 ASSETS_DIR = APP_DIR / "assets"
+COORD_TXT = APP_DIR / "cord_txt"
 
 # Asegurar que las carpetas existan
 TEMPLATES_DIR.mkdir(exist_ok=True)
 ASSETS_DIR.mkdir(exist_ok=True)
+COORD_TXT.mkdir(exist_ok=True)
 
 class PreviewWidget(QLabel):
     coordClicked = Signal(float, float)
@@ -90,8 +92,8 @@ class MainWindow(QWidget):
         super().__init__()
         self.setWindowTitle("Relleno de PDFs - Sistema Unificado")
         self.resize(1200, 800)
-
-        self.templates = self.load_templates()
+        self.unidad = self.load_templates(False) 
+        self.templates = self.load_templates(True)
         self.pdf_assets = {file.stem: str(file) for file in ASSETS_DIR.glob("*.pdf")}
         
         self.pdf_base = None
@@ -159,10 +161,16 @@ class MainWindow(QWidget):
         if self.cboTemplate.count() > 0:
             self.on_template_change(self.cboTemplate.currentText())
 
-    def load_templates(self):
+    def load_templates(self , exclude_unidad=True):
         tpl = {}
+
         if not TEMPLATES_DIR.exists(): TEMPLATES_DIR.mkdir()
-        for jf in TEMPLATES_DIR.glob("*.json"):
+        templates = TEMPLATES_DIR.glob("*.json")
+        if exclude_unidad:
+            solicitudes_templates = [solcitud for solcitud in templates if solcitud.stem not in ["placa", "trailer"]]
+        else:
+            solicitudes_templates = [solcitud for solcitud in templates if solcitud.stem  in ["placa", "trailer"]]
+        for jf in solicitudes_templates:
             try:
                 with open(jf, "r", encoding="utf-8") as f:
                     tpl[jf.stem] = json.load(f)
@@ -223,6 +231,8 @@ class MainWindow(QWidget):
                 data[name] = widget.toPlainText()
             else:
                 data[name] = widget.text()
+            
+
         return data
 
     def preview_pdf(self):
@@ -240,7 +250,7 @@ class MainWindow(QWidget):
                 tmp.close()
 
                 # DEBUG: Verifica que esto sea una lista de strings
-                print(f"Procesando: {[self.pdf_base]}") 
+                #print(f"Procesando: {[self.pdf_base]}") 
 
                 # Llamada a la lógica de overlay
                 generar_pdf_con_overlay([self.pdf_base], template, data, out_path)
@@ -274,11 +284,21 @@ class MainWindow(QWidget):
             "font": "Helvetica",
             "size": 10
         }
+        self.get_coord_filetxt(mm_x, mm_y)
         QApplication.clipboard().setText(json.dumps(nuevo_campo, indent=4))
         self.lblCoords.setText(f"Copiado: Pág {self.current_page+1} | X:{mm_x:.1f} Y:{mm_y:.1f}")
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())
+    def get_coord_filetxt(self, mm_x, mm_y):
+        import io , os
+        with io.open(os.path.join(COORD_TXT, 'coord.txt'), 'a', encoding='utf-8') as f:
+            f.writelines(f"x: {mm_x}, y :{mm_y} \n")
+            
+
+
+
+
+#if __name__ == "__main__":
+#    app = QApplication(sys.argv)
+#    window = MainWindow()
+#    window.show()
+#    sys.exit(app.exec())
