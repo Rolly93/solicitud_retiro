@@ -1,0 +1,134 @@
+import sys
+import fitz  # PyMuPDF
+from pathlib import Path
+from PySide6.QtCore import Qt
+from PySide6 import QtWidgets, QtGui, QtCore
+from PySide6.QtGui import QPixmap, QImage, QColor
+from PySide6.QtWidgets import QMainWindow, QGraphicsScene, QGraphicsPixmapItem
+
+# Importamos tu función de carga de datos
+from backend import load_data 
+# Importamos la clase generada por el compilador de UI (asegúrate que el archivo se llame Main_ui.py)
+from UI.Main_ui import Ui_MainWindow 
+
+class SolicitudesApp(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        
+        # 1. Configuración de la Interfaz
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+        
+        # 2. Configuración del Motor de Gráficos (QGraphicsView)
+        self.scene = QGraphicsScene(self)
+        self.ui.graphicsView.setScene(self.scene)
+        
+        # Creamos el item que contendrá la imagen del PDF
+        self.pdf_item = QGraphicsPixmapItem()
+        self.scene.addItem(self.pdf_item)
+        
+        # Ajustes visuales para el visor
+        self.ui.graphicsView.setRenderHint(QtGui.QPainter.Antialiasing)
+        self.ui.graphicsView.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
+        self.ui.graphicsView.setStyleSheet("background-color: #202020;")
+
+        # 3. Variables de Estado
+        self.datos = load_data()
+        self._doc = None
+        self.pagina_actual = 0
+        self.total_paginas = 0
+        
+        # 4. Inicialización de Widgets
+        self.ui.comboBox_2.addItems(self.datos.keys()) # Llenar con nombres de solicitudes
+        self.ui.comboBox.addItems(["Aduana 1", "Aduana 2", "Aduana 3"]) # Ejemplo
+        self.ui.comboBox_2.currentTextChanged.connect(self.cargar_documento)
+        
+        # 5. Conexión de Señales (Botones y Eventos)
+        self.ui.pushButton_4.clicked # Botón Visualizar
+        self.ui.pushButton_2.clicked.connect(self.pagina_siguiente) # Botón Siguiente
+        self.ui.pushButton.clicked.connect(self.pagina_anterior)    # Botón Anterior
+        
+        # Cargar el primero automáticamente si hay datos
+        if self.datos:
+            QtCore.QTimer.singleShot(100, self.cargar_documento)
+
+    def cargar_documento(self):
+        """Abre el PDF seleccionado en el ComboBox."""
+        nombre_solicitud = self.ui.comboBox_2.currentText()
+        if nombre_solicitud in self.datos:
+            pdf_name = self.datos[nombre_solicitud].get("pdf_path")
+            # Ajusta esta ruta a tu carpeta real de archivos
+            ruta = Path(__file__).parent / "assets" / pdf_name
+            
+            if not ruta.exists():
+                ruta = Path(__file__).parent / "templates" / pdf_name
+
+            if ruta.exists():
+                try:
+                    if self._doc:
+                        self._doc.close()
+                    
+                    self._doc = fitz.open(str(ruta))
+                    self.total_paginas = self._doc.page_count
+                    self.pagina_actual = 0
+                    self.mostrar_pagina()
+                except Exception as e:
+                    print(f"Error al abrir PDF: {e}")
+            else:
+                print(f"Archivo no encontrado en: {ruta}")
+
+    def mostrar_pagina(self):
+        """Renderiza la página actual del documento abierto."""
+        if not self._doc:
+            return
+
+        try:
+            page = self._doc.load_page(self.pagina_actual)
+            
+            # Renderizado de alta calidad (Zoom 2.0)
+            mat = fitz.Matrix(2.0, 2.0)
+            pix = page.get_pixmap(matrix=mat, alpha=False)
+            
+            # Conversión a formato Qt
+            img = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
+            self.pdf_item.setPixmap(QPixmap.fromImage(img))
+            
+            # Ajustar el texto de "Pagina X / Y" en la UI
+            self.ui.label_5.setText(f"Pagina {self.pagina_actual + 1} / {self.total_paginas}")
+            
+            # Centrar y ajustar el PDF al visor
+            self.ui.graphicsView.fitInView(self.pdf_item, Qt.KeepAspectRatio)
+            
+        except Exception as e:
+            print(f"Error al renderizar página: {e}")
+
+    def pagina_siguiente(self):
+        if self._doc and self.pagina_actual < self.total_paginas - 1:
+            self.pagina_actual += 1
+            self.mostrar_pagina()
+
+    def pagina_anterior(self):
+        if self._doc and self.pagina_actual > 0:
+            self.pagina_actual -= 1
+            self.mostrar_pagina()
+
+    def resizeEvent(self, event):
+        """Asegura que el PDF se ajuste cuando el usuario cambia el tamaño de la ventana."""
+        if self.pdf_item.pixmap():
+            self.ui.graphicsView.fitInView(self.pdf_item, Qt.KeepAspectRatio)
+        super().resizeEvent(event)
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
+    
+    # Aplicamos un estilo oscuro para que coincida con tu diseño
+    app.setStyle("Fusion")
+    dark_palette = QtGui.QPalette()
+    dark_palette.setColor(QtGui.QPalette.Window, QColor(45, 45, 45))
+    dark_palette.setColor(QtGui.QPalette.WindowText, Qt.white)
+    dark_palette.setColor(QtGui.QPalette.Base, QColor(30, 30, 30))
+    app.setPalette(dark_palette)
+    
+    window = SolicitudesApp()
+    window.show()
+    sys.exit(app.exec())

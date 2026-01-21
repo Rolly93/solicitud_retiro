@@ -17,7 +17,7 @@ class AdressForm(BasePopout):
         super().__init__(Ui_AdressForm,parent)
 
 
-        self.ui.btn_add_nAddress.clicked.connect(self.guadar_datos)
+        self.ui.btn_add_nAddress.clicked.connect(self.guardar_datos)
 
 
         
