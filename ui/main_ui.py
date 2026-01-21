@@ -214,6 +214,7 @@ class Ui_MainWindow(object):
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
 
+
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
         self.lbl_aduana.setText(QCoreApplication.translate("MainWindow", u"Aduana", None))

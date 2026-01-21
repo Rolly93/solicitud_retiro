@@ -7,7 +7,7 @@ from PySide6.QtCore import Qt
 from ui.main_ui import Ui_MainWindow 
 from data import cargar_todo
 from data import cargar_patios
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox ,QLineEdit ,QLabel
 from PySide6 import  QtCore
 import os
 from pathlib import Path
@@ -29,7 +29,7 @@ class MiApp(QMainWindow):
         self.total_paginas = 0
         self.lista_solicitudes = list(sorted([format_solicitu for format_solicitu in self.dic_file_route()]))
         self.dic_solicitudes = self.dic_file_route()
-        
+        #self.inputs_extra = {}
         #que era esto??
         #self.datos = load_data()
 
@@ -47,6 +47,8 @@ class MiApp(QMainWindow):
         #self.ui.display_pdf.dragMoveEvent(QtWidgets.QGraphicsView.ScrollHandDrag)
         self.ui.display_pdf.setStyleSheet("background-color: #202020;")
 
+        self.layout_dinamico = self.ui.verticalLayout_7
+        
         #funcionamento del los toolbox
         self.ui.tbox_agregar_direccion.clicked.connect(self.popout_addres_form)
         self.ui.tbox_agregar_linea_transfer.clicked.connect(self.popout_tranferForm)
@@ -54,12 +56,13 @@ class MiApp(QMainWindow):
         #asignacion de comboBoc
         self.ui.cmbox_formato.addItems(self.lista_solicitudes)
         self.ui.cmbox_formato.currentTextChanged.connect(self.cambio_plantilla)
+
         self.ui.cmbox_tipo_unidad.addItems(["Trailer","Placa"])
-        
+        self.ui.cmbox_tipo_unidad.currentTextChanged.connect(self.preparar_campos_por_unidad)
+
         self.ui.cmbox_origen.addItems(self.cargar_patios())
         self.ui.cmbox_destino.addItems(self.cargar_patios())
-
-        
+       
         self.ui.btn_previsuzalizar.clicked.connect(self.previsualizar_pdf)
         self.ui.display_pdf
         #extraccion del dato del combox
@@ -83,7 +86,7 @@ class MiApp(QMainWindow):
 
 
     def previsualizar_pdf(self):
-        print("previsualizar")
+        
 
         referencia = self.ui.input_Referencia.text()
         if not self._isvalid_reference(referencia):
@@ -96,7 +99,9 @@ class MiApp(QMainWindow):
         self._destino = self.ui.cmbox_destino.currentText()
         self._referencia = self.ui.input_Referencia.text()
         print("revision de datos", self._aduana, self._tipo_solicitud, self._tipo_unidad, self._origen, self._destino, self._referencia)
+        self.cambio_plantilla()
 
+        
 
     def _isvalid_reference(self,referencia):
         count_characteres = len(referencia)
@@ -195,23 +200,81 @@ class MiApp(QMainWindow):
             print(f"Error al renderizar página: {e}")
 
 
-    def mostrar_pdf(self,ruta_pdf):
-        import fitz
-        doc = fitz.open(ruta_pdf)
-        page = doc.load_page(0)
+    def actualizar_inputs_dinamicos(self, config_unidad):
+            """
+            config_unidad: es el diccionario de 'fields' para Placa o Trailer
+            """
+            # Limpieza (como hicimos antes)
+            for i in reversed(range(self.layout_dinamico.count())):
+                widget = self.layout_dinamico.itemAt(i).widget()
+                if widget and widget.objectName() not in ["lbl_datos_embarque", "lbl_origen", "cmbox_origen", 
+                                                         "lbl_destino", "cmbox_destino", "lbl_referencia", "input_Referencia"]:
+                    widget.deleteLater()
 
-        pix = page.get_pixmap(matrix=fitz.Matrix(2.0,2.0))
+            self.inputs_extra = {}
+            self.config_actual = config_unidad # Guardamos la config para el PDF
 
-        fmt = QImage.Format_RGBA888
-        img = QImage(pix.samples, pix.width, pix.height, pix.stride, fmt)
-        pixmap = QPixmap.fromImage(img)
-        
-        self.escena = QGraphicsScene()
-        self.escena.addPixmap(pixmap)
+            # Crear inputs basados en el JSON
+            for field in config_unidad["fields"]:
+                # Saltamos los campos que ya son fijos en tu UI (opcional)
+                if field["name"] in ["referencia", "origen", "destino"]:
+                    continue
 
+                label = QLabel(field["label"])
+                line_edit = QLineEdit()
+                line_edit.setObjectName(f"input_{field['name']}")
 
+                self.layout_dinamico.addWidget(label)
+                self.layout_dinamico.addWidget(line_edit)
 
+                # Guardamos por 'name' para mapear con el JSON después
+                self.inputs_extra[field["name"]] = line_edit
 
+    def escribir_en_pdf(self):
+            if not self._doc or not self.config_actual:
+                return
+    
+            page = self._doc.load_page(0) # O usar field["page"]
+            
+            for field in self.config_actual["fields"]:
+                valor = ""
+                
+                # 1. Buscar si es un campo fijo de la UI
+                if field["name"] == "referencia": valor = self.ui.input_Referencia.text()
+                elif field["name"] == "origen": valor = self.ui.cmbox_origen.currentText()
+                elif field["name"] == "destino": valor = self.ui.cmbox_destino.currentText()
+                # 2. Si no, buscar en los inputs dinámicos
+                elif field["name"] in self.inputs_extra:
+                    valor = self.inputs_extra[field["name"]].text()
+    
+                if valor:
+                    # Convertir coordenadas de mm a puntos fitz
+                    # Nota: fitz usa el origen arriba a la izquierda. 
+                    # Si tus mm son desde abajo, hay que restar de la altura total.
+                    rect_height = page.rect.height
+                    x_pts = mm_to_pts(field["x"])
+                    # Si el PDF mide 297mm (A4), ajustamos el eje Y si es necesario
+                    y_pts = mm_to_pts(field["y"]) 
+    
+                    page.insert_text((x_pts, y_pts), valor, 
+                                     fontsize=field["size"], 
+                                     fontname="helv") # 'helv' es Helvetica en fitz
+    
+
+    def preparar_campos_por_unidad(self):
+            tipo = self.ui.cmbox_tipo_unidad.currentText() # "Trailer" o "Placa"
+
+            # Aquí cargarías tu JSON (o usarías la variable donde lo tengas)
+            # Por ahora simulamos que 'data_config' es tu JSON:
+            data_config = cargar_todo().get("unidad", {}) 
+
+            if tipo in data_config:
+                config_unidad = data_config[tipo]
+                self.actualizar_inputs_dinamicos(config_unidad)
+
+def mm_to_pts(mm):
+    """Convierte milímetros a puntos tipográficos de PDF (1mm = 2.83465 pts)."""
+    return mm * 2.83465
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MiApp()
