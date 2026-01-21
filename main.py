@@ -1,273 +1,219 @@
+import sys
+from PySide6.QtWidgets import QApplication, QMainWindow ,QGraphicsScene ,QGraphicsPixmapItem
+from PySide6.QtGui import QPixmap ,QImage 
+import fitz
+from PySide6.QtGui import QPainter 
+from PySide6.QtCore import Qt
+from ui.main_ui import Ui_MainWindow 
+from data import cargar_todo
+from data import cargar_patios
+from PySide6.QtWidgets import QMessageBox
+from PySide6 import  QtCore
+import os
 from pathlib import Path
-import sys, io, json, tempfile, time, os
-from PySide6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QFileDialog, QComboBox, QFormLayout, QMessageBox, QScrollArea, QTextEdit,
-)
-import fitz  # PyMuPDF
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QPixmap, QImage
-from overlay import generar_pdf_con_overlay
-
-APP_DIR = Path(__file__).parent
-TEMPLATES_DIR = APP_DIR / "templates"
-ASSETS_DIR = APP_DIR / "assets"
-COORD_TXT = APP_DIR / "cord_txt"
-
-# Asegurar que las carpetas existan
-TEMPLATES_DIR.mkdir(exist_ok=True)
-ASSETS_DIR.mkdir(exist_ok=True)
-COORD_TXT.mkdir(exist_ok=True)
-
-class PreviewWidget(QLabel):
-    coordClicked = Signal(float, float)
-
+class MiApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setAlignment(Qt.AlignCenter)
-        self.setStyleSheet("background:#f8f8f8; border:1px solid #ccc;")
+        self._aduana = ""
+        self._tipo_solicitud = ""
+        self._tipo_unidad = ""
+        self._origen = ""
+        self._destino = ""
+        self._referencia = ""
+        self._nombre_patio = ""
+        self._direccion_patio = ""
+        self._scac = ""
+        self._name_transfer = ""
         self._doc = None
-        self._page_index = 0
-        self._page_height_pt = None
-        self._zoom = 1.2
-        self._pixmap = None
-        self._calibrate_mode = False
-
-    def set_calibrate_mode(self, enabled: bool):
-        self._calibrate_mode = enabled
-        self.setCursor(Qt.CrossCursor if enabled else Qt.ArrowCursor)
-
-    def set_pdf_preview(self, pdf_path, page_index=0, zoom=1.2):
-        self._zoom = zoom
-        self._page_index = page_index
-        try:
-            if self._doc: self._doc.close()
-            self._doc = fitz.open(pdf_path)
-            page = self._doc.load_page(page_index)
-            mat = fitz.Matrix(zoom, zoom)
-            pm = page.get_pixmap(matrix=mat, alpha=False)
-            self._page_height_pt = page.rect.height
-            img = QImage(pm.samples, pm.width, pm.height, pm.stride, QImage.Format_RGB888)
-            self._pixmap = QPixmap.fromImage(img)
-            self.setPixmap(self._pixmap)
-        except Exception as e:
-            self.setText(f"Error al renderizar: {e}")
-
-    def mousePressEvent(self, event):
-        if not self._calibrate_mode or self._pixmap is None:
-            return super().mousePressEvent(event)
-        pos = event.position()
-        x_pt = pos.x() / self._zoom
-        y_pt_top = pos.y() / self._zoom
-        y_pt = self._page_height_pt - y_pt_top
-        mm_x = x_pt * 25.4 / 72.0
-        mm_y = y_pt * 25.4 / 72.0
-        self.coordClicked.emit(mm_x, mm_y)
-
-class MainWindow(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Relleno de PDFs - Datos de Unidad y Solicitud")
-        self.resize(1200, 850)
-
-        # 1. Cargar Plantillas (JSONs)
-        self.unidad_templates , self.solicitud_templates = self.load_templates() 
+        self.page_actual = 0
+        self.total_paginas = 0
+        self.lista_solicitudes = list(sorted([format_solicitu for format_solicitu in self.dic_file_route()]))
+        self.dic_solicitudes = self.dic_file_route()
         
-        # 2. Cargar Assets (PDFs reales disponibles)
-        self.pdf_assets = {file.stem: str(file) for file in ASSETS_DIR.glob("*.pdf")}
+        #que era esto??
+        #self.datos = load_data()
+
         
-        self.pdf_base = None
-        self.last_pdf_out = None
-        self.current_page = 0
-        self.total_pages = 0
-        self.field_widgets = {}
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+        self.scene = QGraphicsScene(self)
+        self.ui.display_pdf.setScene(self.scene)
 
-        root = QHBoxLayout(self)
-        left = QVBoxLayout()
+        self.pdf_item = QGraphicsPixmapItem()
+        self.scene.addItem(self.pdf_item)
 
-        # SELECTORES
-        left.addWidget(QLabel("<b>Documento PDF (Solicitud):</b>"))
-        self.cboTemplate = QComboBox()
-        self.cboTemplate.addItems(list(self.solicitud_templates.keys()))
-        left.addWidget(self.cboTemplate)
+        #Ajuste Visual para visor
+        self.ui.display_pdf.setRenderHint(QPainter.Antialiasing)
+        #self.ui.display_pdf.dragMoveEvent(QtWidgets.QGraphicsView.ScrollHandDrag)
+        self.ui.display_pdf.setStyleSheet("background-color: #202020;")
 
-        left.addWidget(QLabel("<b>Añadir Campos de Unidad:</b>"))
-        self.cbotipo_unidad = QComboBox()
-        self.cbotipo_unidad.addItems(["Sin campos extra"] + list(self.unidad_templates.keys()))
-        left.addWidget(self.cbotipo_unidad)
+        #funcionamento del los toolbox
+        self.ui.tbox_agregar_direccion.clicked.connect(self.popout_addres_form)
+        self.ui.tbox_agregar_linea_transfer.clicked.connect(self.popout_tranferForm)
 
-        # FORMULARIOS
-        self.scroll = QScrollArea()
-        self.scroll.setWidgetResizable(True)
-        container = QWidget()
-        self.main_form_layout = QVBoxLayout(container)
+        #asignacion de comboBoc
+        self.ui.cmbox_formato.addItems(self.lista_solicitudes)
+        self.ui.cmbox_formato.currentTextChanged.connect(self.cambio_plantilla)
+        self.ui.cmbox_tipo_unidad.addItems(["Trailer","Placa"])
         
-        self.layout_base = QFormLayout()
-        self.layout_unidad = QFormLayout()
+        self.ui.cmbox_origen.addItems(self.cargar_patios())
+        self.ui.cmbox_destino.addItems(self.cargar_patios())
+
         
-        self.main_form_layout.addWidget(QLabel("<br>--- CAMPOS DE UNIDAD ---"))
-        self.main_form_layout.addLayout(self.layout_unidad)
-        
-        self.main_form_layout.addWidget(QLabel("--- SOLICITUD DE RETIRO ---"))
-        self.main_form_layout.addLayout(self.layout_base)
-        
-        self.scroll.setWidget(container)
-        left.addWidget(self.scroll)
+        self.ui.btn_previsuzalizar.clicked.connect(self.previsualizar_pdf)
+        self.ui.display_pdf
+        #extraccion del dato del combox
+        self.ui.display_pdf
 
-        # NAVEGACIÓN
-        nav = QHBoxLayout()
-        self.btnPrev = QPushButton("◀")
-        self.btnNext = QPushButton("▶")
-        self.lblPageStatus = QLabel("Pág: 0 / 0")
-        nav.addWidget(self.btnPrev)
-        nav.addWidget(self.lblPageStatus)
-        nav.addWidget(self.btnNext)
-        left.addLayout(nav)
+        self.ui.cobox_aduana.addItem("240")
+        self.ui.cobox_aduana.addItem("800")
 
-        # BOTONES ACCIÓN
-        self.btnPreview = QPushButton("Previsualizar PDF")
-        self.btnCalibrate = QPushButton("Modo Calibrar")
-        self.btnCalibrate.setCheckable(True)
-        self.btnSave = QPushButton("Guardar Final")
-        
-        left.addWidget(self.btnPreview)
-        left.addWidget(self.btnCalibrate)
-        left.addWidget(self.btnSave)
+        if self.dic_solicitudes:
+            QtCore.QTimer.singleShot(0, self.cambio_plantilla)
 
-        self.lblCoords = QLabel("Coords: -")
-        left.addWidget(self.lblCoords)
-        root.addLayout(left, 3)
+    
 
-        self.preview = PreviewWidget()
-        scroll_pre = QScrollArea()
-        scroll_pre.setWidgetResizable(True)
-        scroll_pre.setWidget(self.preview)
-        root.addWidget(scroll_pre, 7)
+    def get_file_route(self):
+        ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+        ASSTES_DIR = os.path.join(ROOT_DIR, "assets")
 
-        # CONEXIONES
-        self.cboTemplate.currentTextChanged.connect(self.on_base_change)
-        self.cbotipo_unidad.currentTextChanged.connect(self.render_unit_fields)
-        self.btnPreview.clicked.connect(self.preview_pdf)
-        self.btnSave.clicked.connect(self.save_pdf)
-        self.btnCalibrate.toggled.connect(self.preview.set_calibrate_mode)
-        self.btnPrev.clicked.connect(lambda: self.change_page(-1))
-        self.btnNext.clicked.connect(lambda: self.change_page(1))
-        self.preview.coordClicked.connect(self.on_coord_clicked)
+        file_names = [route_plantilla.get("filename","") for route_plantilla in cargar_todo().get("solicitud", {}).values()]
+        route_filename = [os.path.join(ASSTES_DIR, filename) for filename in file_names]
+        print(route_filename)
 
-        # Carga Inicial
-        if self.cboTemplate.count() > 0:
-            self.on_base_change(self.cboTemplate.currentText())
 
-    def load_templates(self, ):
+    def previsualizar_pdf(self):
+        print("previsualizar")
 
-        json_path = TEMPLATES_DIR / "templates.json"
-        if not json_path.exists():
-            return {}, {}
+        referencia = self.ui.input_Referencia.text()
+        if not self._isvalid_reference(referencia):
+            return
+       
+        self._aduana = self.ui.cobox_aduana.currentText()
+        self._tipo_solicitud = self.ui.cmbox_formato.currentText()
+        self._tipo_unidad = self.ui.cmbox_tipo_unidad.currentText()
+        self._origen = self.ui.cmbox_origen.currentText()
+        self._destino = self.ui.cmbox_destino.currentText()
+        self._referencia = self.ui.input_Referencia.text()
+        print("revision de datos", self._aduana, self._tipo_solicitud, self._tipo_unidad, self._origen, self._destino, self._referencia)
 
-        with open(json_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        
-        print(f"Templates cargados: {data.get("solicitud", {})}")
-        return data.get("unidad", {}), data.get("solicitud", {})
-    def on_base_change(self, key):
-        # Aquí sí buscamos el PDF físico
-        self.pdf_base = self.pdf_assets.get(key)
-        self.last_pdf_out = None
-        if self.pdf_base:
-            doc = fitz.open(self.pdf_base)
-            self.total_pages = len(doc)
-            doc.close()
-            self.current_page = 0
-            self.update_page_view()
-        
-        # Renderizar campos del documento base
-        self.clear_layout(self.layout_base)
-        template = self.solicitud_templates.get(key, {})
-        self.render_fields_to_layout(template, self.layout_base)
-        # Forzar que los campos de unidad se mantengan si hay algo seleccionado
-        self.render_unit_fields(self.cbotipo_unidad.currentText())
 
-    def render_unit_fields(self, key):
-        # Aquí NO buscamos PDF, solo renderizamos los QLineEdit
-        self.clear_layout(self.layout_unidad)
-        if key == "Sin campos extra": return
-        template = self.unidad_templates.get(key, {})
-        self.render_fields_to_layout(template, self.layout_unidad)
-
-    def render_fields_to_layout(self, template, layout):
-        for field in template.get("fields", []):
-            name = field["name"]
-            label = field.get("label", name)
-            widget = QLineEdit()
-            if name == "fecha": widget.setText(time.strftime("%d/%m/%Y"))
-            self.field_widgets[name] = widget
-            layout.addRow(label + ":", widget)
-
-    def clear_layout(self, layout):
-        while layout.rowCount() > 0:
-            layout.removeRow(0)
-
-    def change_page(self, delta):
-        new_page = self.current_page + delta
-        if 0 <= new_page < self.total_pages:
-            self.current_page = new_page
-            self.update_page_view()
-
-    def update_page_view(self):
-        path = self.last_pdf_out if self.last_pdf_out else self.pdf_base
-        if path:
-            self.preview.set_pdf_preview(path, page_index=self.current_page)
-            self.lblPageStatus.setText(f"Pág: {self.current_page + 1} / {self.total_pages}")
-
-    def preview_pdf(self):
-        if not self.pdf_base: return
-        try:
-            # UNIFICAR CAMPOS: Sumamos los campos del JSON base + los del JSON unidad
-            base_key = self.cboTemplate.currentText()
-            unit_key = self.cbotipo_unidad.currentText()
+    def _isvalid_reference(self,referencia):
+        count_characteres = len(referencia)
+        if not count_characteres == 10 and not (referencia.startswith("92B") or referencia.startswith("82B")) :
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Critical) 
+            msg.setWindowTitle("Error de Referencia")
+            msg.setText("La referencia ingresada es inválida.")
+            msg.setInformativeText("Asegúrese de que tenga 10 caracteres y comience con '92B' o '82B'.")
+            msg.exec()
+            return False
+        return True
             
-            campos_base = self.solicitud_templates.get(base_key, {}).get("fields", [])
-            campos_unidad = self.unidad_templates.get(unit_key, {}).get("fields", []) if unit_key != "Sin campos extra" else []
             
-            full_template = {"fields": campos_base + campos_unidad}
-            data = {n: w.text() for n, w in self.field_widgets.items()}
 
-            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-            out_path = tmp.name
-            tmp.close()
 
-            generar_pdf_con_overlay([self.pdf_base], full_template, data, out_path)
-            self.last_pdf_out = out_path
-            self.update_page_view()
+    def popout_tranferForm(self):
+        from popout import TransferForm
+        
+        dialog_transfer = TransferForm(self)
+
+        if dialog_transfer.exec():
+            scac = dialog_transfer.ui.scac_transfer.text()
+            name_transfer = dialog_transfer.ui.name_linea_transfer.text()
+        
+
+    def popout_addres_form(self):
+        from popout import AdressForm
+        dialog_adress = AdressForm(self)
+
+        if dialog_adress.exec():
+            nombre_patio = dialog_adress.ui.name_yard.text()
+            adress_patio = dialog_adress.ui.address_yard.text()
+        
+    def dic_file_route(self):
+        from pathlib import Path
+        ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+        ASSTES_DIR = Path(__file__).parent / "assets"
+
+        dic_format = {
+        nombre:  str(ASSTES_DIR / ruta.get("filename", ""))
+        
+          for nombre, ruta in cargar_todo().get("solicitud", {}).items() 
+    }
+        return dic_format
+
+    def cargar_patios(self):
+        patios = [patio.get("name") for patio in cargar_patios() ]
+        
+        return patios
+    
+        
+
+    def cambio_plantilla(self ):
+        
+        nombre_solicitud = self.ui.cmbox_formato.currentText()
+        nombre_solicitud = nombre_solicitud.replace(" ","-").lower()
+        
+        if nombre_solicitud in self.dic_solicitudes:
+            pdf_route = Path(__file__).parent /self.dic_solicitudes[nombre_solicitud]
+
+        if pdf_route.exists():
+            try:
+                if self._doc:
+                    self._doc.close()
+                
+                self._doc = fitz.open(str(pdf_route))   
+                self.tota_pages = self._doc.page_count
+                self.page_actual = 0
+                self.mostrar_pagina()
+                
+            except Exception as e:
+                print(f"Error al abrir PDF: {e}")
+        else:
+            print(f"Archivo no encontrado en: {pdf_route}")
+
+    def mostrar_pagina(self):
+        if not self._doc:
+            return
+
+        try:
+            page = self._doc.load_page(self.page_actual)
+            
+            # Renderizado de alta calidad (Zoom 2.0)
+            mat = fitz.Matrix(2.0, 2.0)
+            pix = page.get_pixmap(matrix=mat, alpha=False)
+            
+            # Conversión a formato Qt
+            img = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
+            self.pdf_item.setPixmap(QPixmap.fromImage(img))
+            self.ui.lbl_page_counter.setText(f"Pagina {self.page_actual + 1} / {self.total_paginas}")
+
+            self.ui.display_pdf.fitInView(self.pdf_item, Qt.KeepAspectRatio)
+            
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error al generar preview: {e}")
+            print(f"Error al renderizar página: {e}")
 
-    def save_pdf(self):
-        if not self.last_pdf_out: return
-        path, _ = QFileDialog.getSaveFileName(self, "Guardar", "final.pdf", "PDF (*.pdf)")
-        if path:
-            Path(path).write_bytes(Path(self.last_pdf_out).read_bytes())
-            QMessageBox.information(self, "Éxito", "PDF guardado.")
 
-    def on_coord_clicked(self, mm_x, mm_y):
-        self.get_coord_filetxt(mm_x, mm_y)
-        self.lblCoords.setText(f"X:{mm_x:.1f} Y:{mm_y:.1f}")
-        # Copiar al portapapeles para facilitar edición de JSONs
-        clip = {"name": "nuevo", "x": round(mm_x, 2), "y": round(mm_y, 2), "page": self.current_page}
-        QApplication.clipboard().setText(json.dumps(clip, indent=4))
+    def mostrar_pdf(self,ruta_pdf):
+        import fitz
+        doc = fitz.open(ruta_pdf)
+        page = doc.load_page(0)
 
-    def get_coord_filetxt(self, mm_x, mm_y):
-        with io.open(COORD_TXT / 'coord.txt', 'a', encoding='utf-8') as f:
-            f.write(f"P{self.current_page} -> x: {round(mm_x,2)}, y: {round(mm_y,2)}\n")
+        pix = page.get_pixmap(matrix=fitz.Matrix(2.0,2.0))
 
-#def getnames_from_template_route():
-#    with io.open(TEMPLATES_DIR / 'rutas.txt', 'a', encoding='utf-8') as f:
-#        for filename in os.listdir(ASSETS_DIR):
-#            f.write(f"{filename}\n")
-#getnames_from_template_route()
+        fmt = QImage.Format_RGBA888
+        img = QImage(pix.samples, pix.width, pix.height, pix.stride, fmt)
+        pixmap = QPixmap.fromImage(img)
+        
+        self.escena = QGraphicsScene()
+        self.escena.addPixmap(pixmap)
+
+
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = MainWindow()
+    window = MiApp()
     window.show()
     sys.exit(app.exec())
