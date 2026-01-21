@@ -1,16 +1,19 @@
-import sys
-from PySide6.QtWidgets import QApplication, QMainWindow ,QGraphicsScene ,QGraphicsPixmapItem
-from PySide6.QtGui import QPixmap ,QImage 
-import fitz
-from PySide6.QtGui import QPainter 
-from PySide6.QtCore import Qt
-from ui.main_ui import Ui_MainWindow 
-from data import cargar_todo
-from data import cargar_patios
-from PySide6.QtWidgets import QMessageBox ,QLineEdit ,QLabel
-from PySide6 import  QtCore
 import os
+import sys
+import fitz
 from pathlib import Path
+from PySide6 import  QtCore
+from data import cargar_todo
+from PySide6.QtCore import Qt
+from data import cargar_patios
+from PySide6.QtGui import QPainter 
+from ui.main_ui import Ui_MainWindow 
+from PySide6.QtGui import QPixmap ,QImage 
+from PySide6.QtWidgets import QMessageBox ,QLineEdit ,QLabel , QComboBox
+from PySide6.QtWidgets import QApplication, QMainWindow ,QGraphicsScene ,QGraphicsPixmapItem, QGridLayout, QLabel, QLineEdit , QWidget
+
+
+
 class MiApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -29,9 +32,8 @@ class MiApp(QMainWindow):
         self.total_paginas = 0
         self.lista_solicitudes = list(sorted([format_solicitu for format_solicitu in self.dic_file_route()]))
         self.dic_solicitudes = self.dic_file_route()
-        #self.inputs_extra = {}
-        #que era esto??
-        #self.datos = load_data()
+        self.inputs_extra = {}
+        
 
         
         self.ui = Ui_MainWindow()
@@ -39,6 +41,11 @@ class MiApp(QMainWindow):
         self.scene = QGraphicsScene(self)
         self.ui.display_pdf.setScene(self.scene)
 
+        self.combos_box = [self.ui.cmbox_destino, self.ui.cmbox_origen, self.ui.cmbox_formato, self.ui.cmbox_tipo_unidad , self.ui.cobox_aduana]
+        
+        
+        
+        
         self.pdf_item = QGraphicsPixmapItem()
         self.scene.addItem(self.pdf_item)
 
@@ -51,12 +58,19 @@ class MiApp(QMainWindow):
         
         #funcionamento del los toolbox
         self.ui.tbox_agregar_direccion.clicked.connect(self.popout_addres_form)
+        self.ui.tbox_agregar_direccion.setFocusPolicy(Qt.TabFocus)
+        self.ui.tbox_agregar_direccion.installEventFilter(self)
+        
         self.ui.tbox_agregar_linea_transfer.clicked.connect(self.popout_tranferForm)
+        self.ui.tbox_agregar_linea_transfer.setFocusPolicy(Qt.TabFocus)
+        self.ui.tbox_agregar_linea_transfer.installEventFilter(self)
+        
+        self.ui.input_Referencia.setFocusPolicy(Qt.TabFocus)
 
         #asignacion de comboBoc
         self.ui.cmbox_formato.addItems(self.lista_solicitudes)
         self.ui.cmbox_formato.currentTextChanged.connect(self.cambio_plantilla)
-
+        
         self.ui.cmbox_tipo_unidad.addItems(["Trailer","Placa"])
         self.ui.cmbox_tipo_unidad.currentTextChanged.connect(self.preparar_campos_por_unidad)
 
@@ -71,10 +85,30 @@ class MiApp(QMainWindow):
         self.ui.cobox_aduana.addItem("240")
         self.ui.cobox_aduana.addItem("800")
 
+        self.ui.input_Referencia.returnPressed.connect(self.focusNextChild)
+        
+        for combo in self.combos_box:
+            combo.installEventFilter(self)
+        
         if self.dic_solicitudes:
             QtCore.QTimer.singleShot(0, self.cambio_plantilla)
 
-    
+        if self.ui.cmbox_tipo_unidad:
+            QtCore.QTimer.singleShot(0, self.preparar_campos_por_unidad)
+            
+        
+    def eventFilter(self, obj, event):
+        if event.type() == QtCore.QEvent.KeyPress:
+            if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+                if isinstance(obj , QComboBox):
+                    self.focusNextChild()
+                    return True
+        
+        if obj in [self.ui.tbox_agregar_direccion]:
+            obj.animateClick()
+            return True
+        return super().eventFilter(obj, event)
+
 
     def get_file_route(self):
         ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -84,10 +118,16 @@ class MiApp(QMainWindow):
         route_filename = [os.path.join(ASSTES_DIR, filename) for filename in file_names]
         print(route_filename)
 
-
+    def 
     def previsualizar_pdf(self):
         
-
+        for nombre_campo , wdget in self.inputs_extra.items():
+            print(nombre_campo )
+            if not isinstance(wdget , QComboBox):
+                print(nombre_campo , wdget.text())
+            else:
+                print(nombre_campo , wdget.currentText())
+                
         referencia = self.ui.input_Referencia.text()
         if not self._isvalid_reference(referencia):
             return
@@ -200,35 +240,92 @@ class MiApp(QMainWindow):
             print(f"Error al renderizar página: {e}")
 
 
+
     def actualizar_inputs_dinamicos(self, config_unidad):
-            """
-            config_unidad: es el diccionario de 'fields' para Placa o Trailer
-            """
-            # Limpieza (como hicimos antes)
-            for i in reversed(range(self.layout_dinamico.count())):
-                widget = self.layout_dinamico.itemAt(i).widget()
-                if widget and widget.objectName() not in ["lbl_datos_embarque", "lbl_origen", "cmbox_origen", 
-                                                         "lbl_destino", "cmbox_destino", "lbl_referencia", "input_Referencia"]:
+        # 1. Referenciamos el layout que viene del UI (verticalLayout_7)
+        # Si aún es un QVBoxLayout, lo vamos a manejar.
+        layout = self.ui.verticalLayout_7 
+
+        # 2. Limpieza de widgets antiguos
+        for i in reversed(range(layout.count())):
+            item = layout.itemAt(i)
+            if item.widget():
+                widget = item.widget()
+                # No borrar los elementos base
+                if widget.objectName() not in ["lbl_datos_embarque", "lbl_origen", "cmbox_origen", 
+                                             "lbl_destino", "cmbox_destino", "lbl_referencia", "input_Referencia"]:
                     widget.deleteLater()
 
-            self.inputs_extra = {}
-            self.config_actual = config_unidad # Guardamos la config para el PDF
 
-            # Crear inputs basados en el JSON
-            for field in config_unidad["fields"]:
-                # Saltamos los campos que ya son fijos en tu UI (opcional)
-                if field["name"] in ["referencia", "origen", "destino"]:
-                    continue
+        # Verificamos si ya hemos hecho el cambio, si no, lo cambiamos.
+        if not isinstance(layout, QGridLayout):
+            # Guardamos los widgets fijos que queremos conservar
+            fijos = [self.ui.lbl_datos_embarque, self.ui.lbl_origen, self.ui.cmbox_origen, 
+                     self.ui.lbl_destino, self.ui.cmbox_destino, self.ui.lbl_referencia, self.ui.input_Referencia]
 
-                label = QLabel(field["label"])
+            # Creamos el nuevo layout de rejilla
+            nuevo_layout = QGridLayout()
+            nuevo_layout.setSpacing(10)
+
+            # Re-insertamos los fijos al principio del nuevo layout (ocupando 2 columnas)
+            for fila, widget in enumerate(fijos):
+                nuevo_layout.addWidget(widget, fila, 0, 1, 2) # span de 2 columnas
+
+            # Reemplazamos el layout del frame_5
+            from PySide6.QtWidgets import QLayout
+            old_layout = self.ui.frame_5.layout()
+            if old_layout:
+
+                QWidget().setLayout(old_layout) 
+
+            self.ui.frame_5.setLayout(nuevo_layout)
+            self.ui.verticalLayout_7 = nuevo_layout # Actualizamos la referencia
+            layout = nuevo_layout
+
+
+        self.config_actual = config_unidad
+
+        # 4. Iniciar inserción en dos columnas DESPUÉS de los campos fijos
+        # Como insertamos 7 widgets fijos, empezamos en la fila 7
+        fila_inicio_dinamica = 7
+        columna = 0
+        offset_fila = 0
+
+        for field in config_unidad["fields"]:
+            if field["name"] in ["referencia", "origen", "destino"]:
+                continue
+            
+            if field["name"] in ["linea_transporte"]:
+                line_edit = QComboBox()
+                line_edit.addItems(["TFSQ" , "MOGA"])
+                
+                
+            else:
                 line_edit = QLineEdit()
-                line_edit.setObjectName(f"input_{field['name']}")
+                line_edit.returnPressed.connect(self.focusNextChild)
 
-                self.layout_dinamico.addWidget(label)
-                self.layout_dinamico.addWidget(line_edit)
+            label = QLabel(field["label"])
+            line_edit.setObjectName(f"input_{field['name']}")
 
-                # Guardamos por 'name' para mapear con el JSON después
-                self.inputs_extra[field["name"]] = line_edit
+            # Calculamos posición
+            # Columna 0 usa c0 y c1 | Columna 1 usa c2 y c3
+            r = fila_inicio_dinamica + offset_fila
+            c_label = 0 if columna == 0 else 2
+            c_input = 1 if columna == 0 else 3
+
+            layout.addWidget(label, r, c_label)
+            layout.addWidget(line_edit, r, c_input)
+
+            self.inputs_extra[field["name"]] = line_edit
+            
+            self.restablecer_order_tab()
+
+            # Lógica de alternancia
+            if columna == 0:
+                columna = 1
+            else:
+                columna = 0
+                offset_fila += 1
 
     def escribir_en_pdf(self):
             if not self._doc or not self.config_actual:
@@ -260,6 +357,52 @@ class MiApp(QMainWindow):
                                      fontsize=field["size"], 
                                      fontname="helv") # 'helv' es Helvetica en fitz
     
+    def restablecer_order_tab(self):
+        order_widgets = [
+            self.ui.cobox_aduana,
+            self.ui.cmbox_formato,
+            self.ui.cmbox_tipo_unidad,
+            self.ui.cmbox_origen,
+            self.ui.cmbox_destino,
+            self.ui.input_Referencia
+        ]
+        
+
+        
+        def obtener_posicion(w):
+            idx = self.ui.verticalLayout_7.indexOf(w)
+            return self.ui.verticalLayout_7.getItemPosition(idx)
+
+        
+        dynamic = sorted(self.inputs_extra.values() , key=lambda w: obtener_posicion(w))
+        
+        btn_widgets = [
+            self.ui.btn_previsuzalizar,
+            self.ui.btn_generar_pdf,
+            self.ui.tbox_agregar_linea_transfer,
+            self.ui.tbox_agregar_direccion
+        ]
+        reorder_widgets = order_widgets + dynamic + btn_widgets
+        
+        for i in range(len(reorder_widgets) - 1):
+            widget_actual = reorder_widgets[i]
+            widget_next = reorder_widgets[i+1]
+            
+            self.setTabOrder(widget_actual, widget_next)
+            
+
+    def eventFilter(self, obj, event):
+        # Verificamos si el evento es una tecla presionada
+        if event.type() == QtCore.QEvent.KeyPress:
+            # Si la tecla es Enter o Return
+            if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+                # Si el objeto que tiene el foco es uno de tus ToolButtons
+                if obj in [self.ui.tbox_agregar_direccion, self.ui.tbox_agregar_linea_transfer]:
+                    obj.animateClick() # Simula el click visualmente
+                    return True # Indica que ya manejamos el evento
+
+        # Si es cualquier otro evento, dejar que Qt lo maneje normalmente
+        return super().eventFilter(obj, event)
 
     def preparar_campos_por_unidad(self):
             tipo = self.ui.cmbox_tipo_unidad.currentText() # "Trailer" o "Placa"
@@ -271,6 +414,8 @@ class MiApp(QMainWindow):
             if tipo in data_config:
                 config_unidad = data_config[tipo]
                 self.actualizar_inputs_dinamicos(config_unidad)
+    
+
 
 def mm_to_pts(mm):
     """Convierte milímetros a puntos tipográficos de PDF (1mm = 2.83465 pts)."""
