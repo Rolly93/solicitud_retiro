@@ -2,41 +2,142 @@
     "solicitud": {
     "cfi-solicitud-retiro": {
       "filename": "cfi-solicitud-retiro.pdf",
-      "fields": []
+      "fields": [
+        
+            {"name":"fecha" , "x": 143.46, "y": 187.97},
+            {"name":"caja", "x": 156.4, "y": 175.92},
+            {"name":"cliente" ,"x": 147.58, "y": 164.16},
+            {"name":"destino" ,"x": 191.68, "y": 153.28},
+            {"name":"aa_mx" ,"x": 166.1, "y": 141.23},
+            {"name":"pedimento" ,"x": 147.87, "y": 129.76},
+            {"name":"linea_transporte" ,"x": 154.63, "y": 117.42},
+            {"name":"placas" ,"x": 182.86, "y": 105.07},
+            {"name":"autoriza" ,"x": 162.87, "y": 43.33 }
+        
+      ]
     },
 
-    "checklist-do": {
+    "delivery-order": {
       "filename": "checklist-do.pdf",
       "fields": [
-        { "name": "bultos", "label": "Bultos", "page": 0, "x": 65.91, "y": 149, "unit": "mm", "font": "Helvetica", "size": 10 },
-        { "name": "peso", "label": "Peso", "page": 0, "x": 187, "y": 143, "unit": "mm", "font": "Helvetica", "size": 9 },
-        { "name": "observaciones", "label": "Observaciones", "page": 0, "x": 0, "y": 0, "unit": "mm", "font": "Helvetica", "size": 9 }
+        {"name":"referencia" , "page":0 , "x": 117.0, "y": 245.59},
+        {"name":"fecha" , "page":0 , "x": 267.52, "y": 245.59},
+        {"name":"destino" , "page":0 , "x": 96.13, "y": 237.36},
+        {"name":"recolecta" , "page":0 , "x": 198.44, "y": 238.83},
+        {"name":"bultos" , "page":0 , "x": 98.19, "y": 154.75},
+        {"name":"caja" , "page":0 , "x": 147.28, "y": 145.64},
+        {"name":"peso" , "page":0 , "x": 254.0, "y": 159.75},
+        {"name":"sello" , "page":0 , "x": 141.41, "y": 139.76},
+        {"name":"observaciones" , "page":0 , "x": 97.6, "y": 85.96}    
       ]
+    },
+    "check-list": {
+      "filename": "checklist-do.pdf",
+      "fields": [      
+        {"name":"referencia", "page":1 ,"x" :213.14, "y": 249.12},
+        {"name":"aduana", "page":1 ,"x" :204.61, "y": 245.0},
+        {"name":"recolecta", "page":1 ,"x" :209.02, "y": 240.89},
+        {"name":"destino", "page":1 ,"x" :209.9, "y": 236.48},
+        {"name":"bultos", "page":1 ,"x" :206.38, "y": 232.66},
+        {"name":"peso", "page":1 ,"x" :203.14, "y": 229.13},
+        {"name":"autoriza", "page":1 ,"x" :144.05, "y": 235.3},
+        {"name":"prefile", "page":1 ,"x" :202.55, "y": 214.14},
+        {"name":"caja", "page":1 ,"x" :212.55, "y": 189.15},
+        {"name":"placa", "page":1 ,"x" :209.61, "y": 189.15},
+        {"name":"unidad", "page":1 ,"x" :214.31, "y": 185.03},
+        {"name":"cliente", "page":1 ,"x" :257.82, "y": 189.44},
+        {"name":"linea_transporte", "page":1 ,"x" :281.93, "y": 8.64}      
+    
+    ]
     },
 
     "expeditors-solicitud-retiro-caja": {
       "filename": "expeditors-solicitud-retiro-caja.pdf",
-      "fields": []
+      "fields": [
+        {"name":"fecha" , "x": 216.96, "y": 225.6},
+        {"name":"recolecta" , "x": 142.29, "y": 184.15},
+        {"name":"caja" , "x": 156.1, "y": 175.04},
+        {"name":"guia" , "x": 226.07, "y": 174.45},
+        {"name":"cliente" , "x": 149.05, "y": 149.46},
+        {"name":"destino" , "x": 149.64, "y": 128.59},
+        {"name":"linea_transporte" , "x": 148.17, "y": 110.65},
+        {"name":"referencia" , "x": 147.58, "y": 91.25},
+        {"name":"pedimento" , "x": 147.87, "y": 79.49},
+        {"name":"autoriza" , "x": 146.7, "y": 28.34}
+      ]
     },
     "gtr-solicitud-retiro": {
       "filename": "gtr-solicitud-retiro.pdf",
-      "fields": []
+      "fields": [
+
+        {"name":"fecha" , "x": 229.01, "y": 244.12},
+        {"name":"caja" , "x": 171.39, "y": 212.08},
+        {"name":"caja_dueno" , "x": 213.14, "y": 211.49},
+        {"name":"placas" , "x": 170.8, "y": 205.02},
+        {"name":"sello" , "x": 213.43, "y": 204.43},
+        {"name":"cliente" , "x": 171.39, "y": 197.67},
+        {"name":"linea_transporte" , "x": 171.39, "y": 186.21},
+        {"name":"destino" , "x": 170.51, "y": 154.16},
+        {"name":"direccion" , "x": 172.27, "y": 148.58},
+        {"name":"pedimento" , "x": 171.39, "y": 136.82},
+        {"name":"aa_mx" , "x": 171.1, "y": 130.65},
+        {"name":"autoriza" , "x": 171.1, "y": 124.47},
+        {"name":"observaciones" , "x": 171.39, "y": 112.12}
+
+      ]
     },
     "inovativos-solicitud-retiro": {
       "filename": "inovativos-solicitud-retiro.pdf",
-      "fields": []
+      "fields": [
+        {"name":"caja" , "x": 157.28, "y": 189.15},
+        {"name":"pedimento" , "x": 172.27, "y": 180.92},
+        {"name":"linea_transporte" , "x": 162.57, "y": 171.51},
+        {"name":"autoriza" , "x": 149.93, "y": 128.29},
+        {"name":"fecha" , "x": 119.65, "y": 238.54}
+
+
+      ]
     },
     "solicitud-retiro-expeditors": {
       "filename": "solicitud-retiro-expeditors.pdf",
-      "fields": []
+      "fields": [
+
+        {"name":"fecha" , "x": 187.03, "y": 231.01},
+        {"name":"caja" , "x" : 132.7, "y": 204.91},
+        {"name":"cliente" , "x": 133.88, "y": 191.97},
+        {"name":"destino" , "x": 129.41, "y": 177.39},
+        {"name":"linea_transporte" , "x": 129.65, "y": 163.75},
+        {"name":"referencia" , "x": 127.53, "y": 152.93},
+        {"name":"pedimento" , "x": 126.59, "y": 138.82},
+        {"name":"aa_mx" , "x": 126.59, "y": 128.0},
+        {"name":"autoriza" , "x": 125.88, "y": 67.09}
+      ]
     },
     "solicitud-retiro-xcf": {
       "filename": "solicitud-retiro-xcf.pdf",
-      "fields": []
+      "fields": [
+        {"name":"fecha" , "x": 165.86, "y": 204.91},
+        {"name":"guia" , "x": 98.37, "y": 180.92},
+        {"name":"talon" , "x": 121.88, "y": 170.33},
+        {"name":"cliente" , "x": 108.48, "y": 159.28},
+        {"name":"pedimento" , "x": 102.83, "y": 143.76},
+        {"name":"bultos" , "x": 107.54, "y": 133.17},
+        {"name":"linea_transporte" , "x": 120.71, "y": 124.71},
+        {"name":"autoriza" , "x": 98.6, "y": 88.49}
+      ]
     },
     "tnl-solicitud-retiro": {
       "filename": "tnl-solicitud-retiro.pdf",
-      "fields": []
+      "fields": [
+{"name":"fecha", "x": 168.69, "y": 207.96},
+{"name":"guia", "x": 109.18, "y": 162.34},
+{"name":"talon", "x": 132.0, "y": 150.58},
+{"name":"cliente", "x": 111.07, "y": 139.76},
+{"name":"pedimento", "x": 109.66, "y": 129.88},
+{"name":"bultos", "x": 110.6, "y": 118.83},
+{"name":"linea_transporte", "x": 112.71, "y": 108.01},
+{"name":"autoriza", "x": 98.84, "y": 71.5}
+      ]
     }
   },
   "unidad":
@@ -76,12 +177,12 @@
     },
     "patios" :
     [
-        {"nombre_patio": "" , 
+        {"nombre_patio": "Bodega Lrd" , 
         "direccion":"" 
     },
-        {"nombre_patio": "" , 
+        {"nombre_patio": "GTR" , 
         "direccion":"" 
-    },
+    }
         
     ]
 }
