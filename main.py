@@ -5,7 +5,7 @@ from pathlib import Path
 from PySide6 import  QtCore
 from data import cargar_todo
 from PySide6.QtCore import Qt
-from data import cargar_patios
+from data import cargar_patios , get_data_transfer
 from PySide6.QtGui import QPainter 
 from ui.main_ui import Ui_MainWindow 
 from PySide6.QtGui import QPixmap ,QImage 
@@ -118,11 +118,11 @@ class MiApp(QMainWindow):
         route_filename = [os.path.join(ASSTES_DIR, filename) for filename in file_names]
         print(route_filename)
 
-    def 
+    
     def previsualizar_pdf(self):
         
         for nombre_campo , wdget in self.inputs_extra.items():
-            print(nombre_campo )
+
             if not isinstance(wdget , QComboBox):
                 print(nombre_campo , wdget.text())
             else:
@@ -297,7 +297,7 @@ class MiApp(QMainWindow):
             
             if field["name"] in ["linea_transporte"]:
                 line_edit = QComboBox()
-                line_edit.addItems(["TFSQ" , "MOGA"])
+                line_edit.addItems(get_data_transfer().keys())
                 
                 
             else:

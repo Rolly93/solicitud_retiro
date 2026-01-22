@@ -140,8 +140,8 @@
       ]
     }
   },
-  "unidad":
-  {
+
+  "unidad":  {
     "Placa" :{
     "fields" : [
             { "name": "referencia",       "label":   "Referencia",              "page": 0,  "x": 60,    "y": 191,    "unit": "mm",   "font": "Helvetica",    "size": 20 },
@@ -175,8 +175,7 @@
     ]
         }
     },
-    "patios" :
-    [
+    "patios" : [
         {"nombre_patio": "Bodega Lrd" , 
         "direccion":"" 
     },
@@ -184,5 +183,12 @@
         "direccion":"" 
     }
         
+    ],
+    "linea_transporte":
+    [
+      {"name" : "FEMA" , "scac" : "TFSQ"},
+      {"name" : "MOGA" , "scac" : "MOGF"}
+
     ]
+    
 }
