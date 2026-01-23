@@ -12,6 +12,7 @@ from PySide6.QtGui import QPixmap ,QImage
 from PySide6.QtWidgets import QMessageBox ,QLineEdit ,QLabel , QComboBox
 from PySide6.QtWidgets import QApplication, QMainWindow ,QGraphicsScene ,QGraphicsPixmapItem, QGridLayout, QLabel, QLineEdit , QWidget
 
+from overlay import PDFEditor
 
 
 class MiApp(QMainWindow):
@@ -33,6 +34,7 @@ class MiApp(QMainWindow):
         self.lista_solicitudes = list(sorted([format_solicitu for format_solicitu in self.dic_file_route()]))
         self.dic_solicitudes = self.dic_file_route()
         self.inputs_extra = {}
+        self.i_values_extra={}
         
 
         
@@ -119,14 +121,21 @@ class MiApp(QMainWindow):
         print(route_filename)
 
     
-    def previsualizar_pdf(self):
-        
-        for nombre_campo , wdget in self.inputs_extra.items():
+    def return_values_dynamic(self ,dynamic_values ):
+        data_input = {}
+        for nombre_campo , wdget in dynamic_values:
 
             if not isinstance(wdget , QComboBox):
-                print(nombre_campo , wdget.text())
+                data_input[nombre_campo]= wdget.text()
             else:
-                print(nombre_campo , wdget.currentText())
+                data_input[nombre_campo] =wdget.currentText()
+        return data_input
+
+
+    def previsualizar_pdf(self):
+        
+        data = {}
+        self.i_values_extra = self.return_values_dynamic(self.inputs_extra.items())
                 
         referencia = self.ui.input_Referencia.text()
         if not self._isvalid_reference(referencia):
@@ -138,8 +147,20 @@ class MiApp(QMainWindow):
         self._origen = self.ui.cmbox_origen.currentText()
         self._destino = self.ui.cmbox_destino.currentText()
         self._referencia = self.ui.input_Referencia.text()
-        print("revision de datos", self._aduana, self._tipo_solicitud, self._tipo_unidad, self._origen, self._destino, self._referencia)
-        self.cambio_plantilla()
+        
+        data["referencia"] = self._referencia
+        data["aduana"] = self._aduana
+        data["tipo_solicitud"] = self._tipo_solicitud
+        data["tipo_unidad"] = self._tipo_unidad
+        data["origen"] = self._origen
+        data["destino"] = self._destino
+
+        self.i_values_extra.update(data)
+
+        self.escribir_en_pdf()
+
+
+        
 
         
 
@@ -327,22 +348,29 @@ class MiApp(QMainWindow):
                 columna = 0
                 offset_fila += 1
 
-    def escribir_en_pdf(self):
+    def escribir_en_pdf(self,):
+            
             if not self._doc or not self.config_actual:
                 return
-    
+            fillpdf = PDFEditor()
             page = self._doc.load_page(0) # O usar field["page"]
             
-            for field in self.config_actual["fields"]:
+            for field in self.config_actual.get("fields", {}):
                 valor = ""
+                print(f"Key : {field["name"]} , value \n")
                 
                 # 1. Buscar si es un campo fijo de la UI
-                if field["name"] == "referencia": valor = self.ui.input_Referencia.text()
+                if field["name"] == "referencia": 
+                    valor = self.ui.input_Referencia.text()
+
                 elif field["name"] == "origen": valor = self.ui.cmbox_origen.currentText()
                 elif field["name"] == "destino": valor = self.ui.cmbox_destino.currentText()
                 # 2. Si no, buscar en los inputs dinámicos
-                elif field["name"] in self.inputs_extra:
+                
+                elif field["name"] in self.inputs_extra and not isinstance(self.inputs_extra[field["name"]], QComboBox):
                     valor = self.inputs_extra[field["name"]].text()
+                else:
+                    valor = self.inputs_extra[field["name"]].currentText()
     
                 if valor:
                     # Convertir coordenadas de mm a puntos fitz
@@ -356,7 +384,7 @@ class MiApp(QMainWindow):
                     page.insert_text((x_pts, y_pts), valor, 
                                      fontsize=field["size"], 
                                      fontname="helv") # 'helv' es Helvetica en fitz
-    
+            fillpdf.llenar_plantilla(self._doc, self.i_values_extra, self.inputs_extra)
     def restablecer_order_tab(self):
         order_widgets = [
             self.ui.cobox_aduana,
