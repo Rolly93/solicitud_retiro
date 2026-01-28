@@ -3,7 +3,7 @@ import sys
 import fitz
 from pathlib import Path
 from PySide6 import  QtCore
-from data import cargar_todo
+from data import cargar_todo , get_coord
 from PySide6.QtCore import Qt
 from data import cargar_patios , get_data_transfer
 from PySide6.QtGui import QPainter 
@@ -12,7 +12,18 @@ from PySide6.QtGui import QPixmap ,QImage
 from PySide6.QtWidgets import QMessageBox ,QLineEdit ,QLabel , QComboBox
 from PySide6.QtWidgets import QApplication, QMainWindow ,QGraphicsScene ,QGraphicsPixmapItem, QGridLayout, QLabel, QLineEdit , QWidget
 
-from overlay import PDFEditor
+class PDFGraphicsItem(QGraphicsPixmapItem):
+    # Definimos una señal personalizada (necesita heredar de QObject para señales, 
+    # pero para simplicidad usaremos un callback)
+    def __init__(self, callback):
+        super().__init__()
+        self.callback = callback
+
+    def mousePressEvent(self, event):
+        # Obtener posición local al item (la imagen)
+        pos = event.pos()
+        self.callback(pos.x(), pos.y())
+        super().mousePressEvent(event)
 
 
 class MiApp(QMainWindow):
@@ -48,7 +59,8 @@ class MiApp(QMainWindow):
         
         
         
-        self.pdf_item = QGraphicsPixmapItem()
+        #self.pdf_item = QGraphicsPixmapItem()
+        self.pdf_item = PDFGraphicsItem(self.on_pdf_click)
         self.scene.addItem(self.pdf_item)
 
         #Ajuste Visual para visor
@@ -57,17 +69,19 @@ class MiApp(QMainWindow):
         self.ui.display_pdf.setStyleSheet("background-color: #202020;")
 
         self.layout_dinamico = self.ui.verticalLayout_7
+
+        #btn de guardar
+        self.ui.btn_generar_pdf.clicked.connect(self.guardar)
         
         #funcionamento del los toolbox
         self.ui.tbox_agregar_direccion.clicked.connect(self.popout_addres_form)
         self.ui.tbox_agregar_direccion.setFocusPolicy(Qt.TabFocus)
-        self.ui.tbox_agregar_direccion.installEventFilter(self)
+       # self.ui.tbox_agregar_direccion.installEventFilter(self)
         
         self.ui.tbox_agregar_linea_transfer.clicked.connect(self.popout_tranferForm)
         self.ui.tbox_agregar_linea_transfer.setFocusPolicy(Qt.TabFocus)
-        self.ui.tbox_agregar_linea_transfer.installEventFilter(self)
+        #self.ui.tbox_agregar_linea_transfer.installEventFilter(self)
         
-        self.ui.input_Referencia.setFocusPolicy(Qt.TabFocus)
 
         #asignacion de comboBoc
         self.ui.cmbox_formato.addItems(self.lista_solicitudes)
@@ -89,8 +103,8 @@ class MiApp(QMainWindow):
 
         self.ui.input_Referencia.returnPressed.connect(self.focusNextChild)
         
-        for combo in self.combos_box:
-            combo.installEventFilter(self)
+        #for combo in self.combos_box:
+        #    combo.installEventFilter(self)
         
         if self.dic_solicitudes:
             QtCore.QTimer.singleShot(0, self.cambio_plantilla)
@@ -99,16 +113,20 @@ class MiApp(QMainWindow):
             QtCore.QTimer.singleShot(0, self.preparar_campos_por_unidad)
             
         
+
     def eventFilter(self, obj, event):
         if event.type() == QtCore.QEvent.KeyPress:
-            if event.key() in (Qt.Key_Return, Qt.Key_Enter):
-                if isinstance(obj , QComboBox):
+            if event.key() in (Qt.key_Return , Qt.Key_Enter):
+
+                if isinstance(obj , (QComboBox , QLineEdit)):
                     self.focusNextChild()
                     return True
-        
-        if obj in [self.ui.tbox_agregar_direccion]:
-            obj.animateClick()
-            return True
+                
+                if obj in [self.ui.tbox_agregar_direccion , self.ui.tbox_agregar_linea_transfer]:
+                    obj.animateClick()
+                    return True
+
+        # Si es cualquier otro evento, dejar que Qt lo maneje normalmente
         return super().eventFilter(obj, event)
 
 
@@ -118,7 +136,6 @@ class MiApp(QMainWindow):
 
         file_names = [route_plantilla.get("filename","") for route_plantilla in cargar_todo().get("solicitud", {}).values()]
         route_filename = [os.path.join(ASSTES_DIR, filename) for filename in file_names]
-        print(route_filename)
 
     
     def return_values_dynamic(self ,dynamic_values ):
@@ -157,7 +174,7 @@ class MiApp(QMainWindow):
 
         self.i_values_extra.update(data)
 
-        self.escribir_en_pdf()
+        self.escribir_en_pdf(self.i_values_extra)
 
 
         
@@ -199,7 +216,7 @@ class MiApp(QMainWindow):
         
     def dic_file_route(self):
         from pathlib import Path
-        ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+        
         ASSTES_DIR = Path(__file__).parent / "assets"
 
         dic_format = {
@@ -265,6 +282,8 @@ class MiApp(QMainWindow):
     def actualizar_inputs_dinamicos(self, config_unidad):
         # 1. Referenciamos el layout que viene del UI (verticalLayout_7)
         # Si aún es un QVBoxLayout, lo vamos a manejar.
+
+        self.inputs_extra.clear()
         layout = self.ui.verticalLayout_7 
 
         # 2. Limpieza de widgets antiguos
@@ -306,8 +325,6 @@ class MiApp(QMainWindow):
 
         self.config_actual = config_unidad
 
-        # 4. Iniciar inserción en dos columnas DESPUÉS de los campos fijos
-        # Como insertamos 7 widgets fijos, empezamos en la fila 7
         fila_inicio_dinamica = 7
         columna = 0
         offset_fila = 0
@@ -348,43 +365,35 @@ class MiApp(QMainWindow):
                 columna = 0
                 offset_fila += 1
 
-    def escribir_en_pdf(self,):
-            
-            if not self._doc or not self.config_actual:
-                return
-            fillpdf = PDFEditor()
-            page = self._doc.load_page(0) # O usar field["page"]
-            
-            for field in self.config_actual.get("fields", {}):
-                valor = ""
-                print(f"Key : {field["name"]} , value \n")
-                
-                # 1. Buscar si es un campo fijo de la UI
-                if field["name"] == "referencia": 
-                    valor = self.ui.input_Referencia.text()
+    def escribir_en_pdf(self, input_values):
+        if not self._doc or not input_values: return
+        page = self._doc.load_page(0) 
 
-                elif field["name"] == "origen": valor = self.ui.cmbox_origen.currentText()
-                elif field["name"] == "destino": valor = self.ui.cmbox_destino.currentText()
-                # 2. Si no, buscar en los inputs dinámicos
-                
-                elif field["name"] in self.inputs_extra and not isinstance(self.inputs_extra[field["name"]], QComboBox):
-                    valor = self.inputs_extra[field["name"]].text()
-                else:
-                    valor = self.inputs_extra[field["name"]].currentText()
-    
-                if valor:
-                    # Convertir coordenadas de mm a puntos fitz
-                    # Nota: fitz usa el origen arriba a la izquierda. 
-                    # Si tus mm son desde abajo, hay que restar de la altura total.
-                    rect_height = page.rect.height
-                    x_pts = mm_to_pts(field["x"])
-                    # Si el PDF mide 297mm (A4), ajustamos el eje Y si es necesario
-                    y_pts = mm_to_pts(field["y"]) 
-    
-                    page.insert_text((x_pts, y_pts), valor, 
-                                     fontsize=field["size"], 
-                                     fontname="helv") # 'helv' es Helvetica en fitz
-            fillpdf.llenar_plantilla(self._doc, self.i_values_extra, self.inputs_extra)
+        # Constante universal: 72 pts/pulgada / 25.4 mm/pulgada
+        MM_TO_PTS = 2.83465
+
+        tipo_solicitud = input_values.get("tipo_solicitud")
+        values = {k: v for k, v in input_values.items() if k != "tipo_solicitud"}
+
+        for name, value in values.items():
+            coords = get_coord(tipo_solicitud, name)
+            if not coords or coords[0] is None: continue
+
+            x_mm, y_mm = coords
+
+            # Conversión directa y limpia
+            x_pts = x_mm * MM_TO_PTS
+            y_pts = y_mm * MM_TO_PTS
+
+            if value:
+                # Ajustamos un poco y_pts (-2) para que el texto no "pise" la línea
+                page.insert_text((x_pts, y_pts - 2), str(value), 
+                                 fontsize=15, # Tamaño más estándar para formularios
+                                 fontname="helv",
+                                 color=(0, 0, 0))
+
+        self.mostrar_pagina()
+            
     def restablecer_order_tab(self):
         order_widgets = [
             self.ui.cobox_aduana,
@@ -394,8 +403,6 @@ class MiApp(QMainWindow):
             self.ui.cmbox_destino,
             self.ui.input_Referencia
         ]
-        
-
         
         def obtener_posicion(w):
             idx = self.ui.verticalLayout_7.indexOf(w)
@@ -419,19 +426,6 @@ class MiApp(QMainWindow):
             self.setTabOrder(widget_actual, widget_next)
             
 
-    def eventFilter(self, obj, event):
-        # Verificamos si el evento es una tecla presionada
-        if event.type() == QtCore.QEvent.KeyPress:
-            # Si la tecla es Enter o Return
-            if event.key() in (Qt.Key_Return, Qt.Key_Enter):
-                # Si el objeto que tiene el foco es uno de tus ToolButtons
-                if obj in [self.ui.tbox_agregar_direccion, self.ui.tbox_agregar_linea_transfer]:
-                    obj.animateClick() # Simula el click visualmente
-                    return True # Indica que ya manejamos el evento
-
-        # Si es cualquier otro evento, dejar que Qt lo maneje normalmente
-        return super().eventFilter(obj, event)
-
     def preparar_campos_por_unidad(self):
             tipo = self.ui.cmbox_tipo_unidad.currentText() # "Trailer" o "Placa"
 
@@ -442,12 +436,41 @@ class MiApp(QMainWindow):
             if tipo in data_config:
                 config_unidad = data_config[tipo]
                 self.actualizar_inputs_dinamicos(config_unidad)
-    
+    def guardar(self):
+        guardar = "./test.pdf"
+
+        self._doc.save(guardar,garbage=4 , deflate=True)
 
 
-def mm_to_pts(mm):
-    """Convierte milímetros a puntos tipográficos de PDF (1mm = 2.83465 pts)."""
-    return mm * 2.83465
+    def on_pdf_click(self, x_pix, y_pix):
+        if not self._doc: return
+
+        # 1. Obtener dimensiones reales del PDF en puntos (pts)
+        rect = self._doc.load_page(0).rect
+        pdf_w_pts = rect.width
+        pdf_h_pts = rect.height
+
+        # 2. Obtener el tamaño de la imagen renderizada (Pixmap)
+        # Esto es vital para manejar el zoom de 2.0 correctamente
+        pixmap_rect = self.pdf_item.pixmap().rect()
+        img_w = pixmap_rect.width()
+        img_h = pixmap_rect.height()
+
+        # 3. Mapear Píxel -> Punto PDF (Regla de 3)
+        x_pt = (x_pix / img_w) * pdf_w_pts
+        y_pt = (y_pix / img_h) * pdf_h_pts
+
+        # 4. Convertir Punto PDF -> Milímetros (1mm = 2.83465 pts)
+        x_mm = x_pt / 2.83465
+        y_mm = y_pt / 2.83465
+
+        print(f"--- NUEVA CALIBRACIÓN ---")
+        print(f"X: {x_mm:.2f} mm, Y: {y_mm:.2f} mm")
+
+        # Copiar al portapapeles en formato listo para data.py
+        QApplication.clipboard().setText(f'"x": {x_mm:.2f}, "y": {y_mm:.2f}')
+        self.ui.statusbar.showMessage(f"Copiado: X={x_mm:.2f}, Y={y_mm:.2f}")
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MiApp()

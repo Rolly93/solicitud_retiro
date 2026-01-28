@@ -54,10 +54,21 @@ def delete_patio(patio_name):
     save_master(todo)
     return True, "Eliminado con éxito"
 
-def crear_capa():#tamano_pagina, fields, datos
+def get_coord(destino:str , name:str)->list:
     """funcion para extaer las coordenadas de las plantillas dependiendo de 
     la plantilla seleccionada"""
-    solicitudes = [patios for patios in cargar_todo().get("solicitud", {}).values()]
+    solicitudes = (patios for patios in cargar_todo()["solicitud"].items())
+
+    for solicitud ,coodr  in solicitudes:
+        is_requested = solicitud == destino
+        if is_requested:
+            for cord in coodr["fields"]:
+                if cord["name"] == name:
+                    
+                    return [cord["x"] , cord["y"]]
+    return [None,None]
+
+
 
 def get_scac_linea_transporte(scac):
     linea_transfer = get_data_transfer()
