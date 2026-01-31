@@ -4,13 +4,16 @@ import fitz
 from pathlib import Path
 from PySide6 import  QtCore
 from PySide6.QtCore import Qt
-from pdf_service import PDFService
 from PySide6.QtGui import QPainter 
 from ui.main_ui import Ui_MainWindow 
+from core.pdf_service import PDFService
 from PySide6.QtGui import QPixmap ,QImage 
+from core.data import cargar_todo , get_coord  , get_data_transfer
 from PySide6.QtWidgets import QMessageBox ,QLineEdit ,QLabel , QComboBox
-from data import cargar_todo , get_coord , cargar_patios , get_data_transfer
 from PySide6.QtWidgets import QApplication, QMainWindow ,QGraphicsScene ,QGraphicsPixmapItem, QGridLayout, QLabel, QLineEdit ,QWidget
+
+from  core.data_manager import DataManager
+
 class PDFGraphicsItem(QGraphicsPixmapItem):
     # Definimos una señal personalizada (necesita heredar de QObject para señales, 
     # pero para simplicidad usaremos un callback)
@@ -29,6 +32,8 @@ class MiApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.pdf_service = PDFService()
+        self.data_managet = DataManager()
+        
         self.total_paginas = 0
         self.page_actual = 0
 
@@ -43,8 +48,9 @@ class MiApp(QMainWindow):
         self._scac = ""
         self._name_transfer = ""
         self._doc = None
-        self.lista_solicitudes = list(sorted([str(format_solicitu).replace("-"," ").upper() for format_solicitu in self.dic_file_route()]))
-        self.dic_solicitudes = self.dic_file_route()
+        self.lista_solicitudes = self.data_managet.list_solicitud
+
+        self.dic_solicitudes = self.data_managet._dict_solicitudes()
         self.inputs_extra = {}
         self.i_values_extra={}
         
@@ -91,8 +97,8 @@ class MiApp(QMainWindow):
         self.ui.cmbox_tipo_unidad.addItems(["Trailer","Placa"])
         self.ui.cmbox_tipo_unidad.currentTextChanged.connect(self.preparar_campos_por_unidad)
 
-        self.ui.cmbox_origen.addItems(self.cargar_patios())
-        self.ui.cmbox_destino.addItems(self.cargar_patios())
+        self.ui.cmbox_origen.addItems(self.data_managet.list_yard)
+        self.ui.cmbox_destino.addItems(self.data_managet.list_yard)
        
         self.ui.btn_previsuzalizar.clicked.connect(self.previsualizar_pdf)
         self.ui.display_pdf
@@ -106,12 +112,11 @@ class MiApp(QMainWindow):
         
         #for combo in self.combos_box:
         #    combo.installEventFilter(self)
-        
-        if self.dic_solicitudes:
-            QtCore.QTimer.singleShot(0, self.cambio_plantilla)
 
-        if self.ui.cmbox_tipo_unidad:
+
+        if self.ui.cmbox_tipo_unidad or self.dic_solicitudes:
             QtCore.QTimer.singleShot(0, self.preparar_campos_por_unidad)
+            QtCore.QTimer.singleShot(0, self.cambio_plantilla)
             
         
 
@@ -143,25 +148,28 @@ class MiApp(QMainWindow):
                 data_input[nombre_campo] =wdget.currentText()
         return data_input
 
-
-    def previsualizar_pdf(self):
+    def recolectar_formularios(self):
         
-        datos= self.i_values_extra = self.return_values_dynamic(self.inputs_extra.items())
-                
-        referencia = self.ui.input_Referencia.text()
-        if not self._isvalid_reference(referencia):
-            return
-        datos.update(
-            
-        {"referencia" :self.ui.input_Referencia.text(),
+        
+        datos = {
+        "referencia" :self.ui.input_Referencia.text(),
         "aduana" :self.ui.cobox_aduana.currentText(),
         "tipo_solicitud" :self.ui.cmbox_formato.currentText(),
         "tipo_unidad" :self.ui.cmbox_tipo_unidad.currentText(),
         "origen" :self.ui.cmbox_origen.currentText(),
         "destino" :self.ui.cmbox_destino.currentText()
-        })
-
+        }
+        datos.update(self.return_values_dynamic(self.inputs_extra.items()))
         
+        return datos
+        
+    def previsualizar_pdf(self):
+
+        referencia = self.ui.input_Referencia.text()
+        if not self._isvalid_reference(referencia):
+            return
+
+        datos =self.recolectar_formularios()
 
         self.pdf_service.escribir_campos(datos , get_coord)
         self.mostrar_pagina()
@@ -204,41 +212,29 @@ class MiApp(QMainWindow):
             nombre_patio = dialog_adress.ui.name_yard.text()
             adress_patio = dialog_adress.ui.address_yard.text()
         
-    def dic_file_route(self):
-        from pathlib import Path
-        
-        ASSTES_DIR = Path(__file__).parent / "assets"
 
-        dic_format = {
-        nombre:  str(ASSTES_DIR / ruta.get("filename", ""))
-        
-          for nombre, ruta in cargar_todo().get("solicitud", {}).items() 
-    }
-        return dic_format
 
-    def cargar_patios(self):
-        patios = [str(patio.get("name")).upper() for patio in cargar_patios() ]
-        
-        return patios
+
     
         
 
     def cambio_plantilla(self ):
         
-        nombre_solicitud = self.ui.cmbox_formato.currentText().replace(" ","-").lower()
-
-        if nombre_solicitud in self.dic_solicitudes:
-            pdf_route = Path(__file__).parent /self.dic_solicitudes[nombre_solicitud]
+        nombre_solicitud = self.ui.cmbox_formato.currentText()
+        
         try:
+            pdf_route = self.data_managet.obtener_ruta_solicitud(nombre_solicitud)
             self.total_paginas = self.pdf_service.cargar_documento(pdf_route)
             self.page_actual = 0
             self.mostrar_pagina()
-            print(f"Archivo encontrado en: {pdf_route}")
+            
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error al cambiar de plantilla: \t {e}")
 
+        
     def mostrar_pagina(self):
         
+
         pix = self.pdf_service.obtener_pixmap(self.page_actual)
         
         if pix:
