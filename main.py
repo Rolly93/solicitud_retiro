@@ -102,17 +102,12 @@ class MiApp(QMainWindow):
        
         self.ui.btn_previsuzalizar.clicked.connect(self.previsualizar_pdf)
         self.ui.display_pdf
-        #extraccion del dato del combox
-        self.ui.display_pdf
 
         self.ui.cobox_aduana.addItem("240")
         self.ui.cobox_aduana.addItem("800")
 
         self.ui.input_Referencia.returnPressed.connect(self.focusNextChild)
         
-        #for combo in self.combos_box:
-        #    combo.installEventFilter(self)
-
 
         if self.ui.cmbox_tipo_unidad or self.dic_solicitudes:
             QtCore.QTimer.singleShot(0, self.preparar_campos_por_unidad)
@@ -172,10 +167,7 @@ class MiApp(QMainWindow):
         datos =self.recolectar_formularios()
 
         self.pdf_service.escribir_campos(datos , get_coord)
-        self.mostrar_pagina()
-
-
-        
+        self.mostrar_pagina()        
 
         
 
@@ -189,8 +181,7 @@ class MiApp(QMainWindow):
             msg.setInformativeText("Asegúrese de que tenga 10 caracteres y comience con '92B' o '82B'.")
             msg.exec()
             return False
-        return True
-            
+        return True           
             
 
 
@@ -210,12 +201,7 @@ class MiApp(QMainWindow):
 
         if dialog_adress.exec():
             nombre_patio = dialog_adress.ui.name_yard.text()
-            adress_patio = dialog_adress.ui.address_yard.text()
-        
-
-
-
-    
+            adress_patio = dialog_adress.ui.address_yard.text()    
         
 
     def cambio_plantilla(self ):
@@ -290,8 +276,7 @@ class MiApp(QMainWindow):
             layout = nuevo_layout
 
 
-        self.config_actual = config_unidad
-
+        
         fila_inicio_dinamica = 7
         columna = 0
         offset_fila = 0
@@ -302,7 +287,7 @@ class MiApp(QMainWindow):
             #aqui tengo que agregar las observaciones
             if field["name"] in ["linea_transporte"]:
                 line_edit = QComboBox()
-                line_edit.addItems(get_data_transfer().keys())
+                line_edit.addItems(self.data_managet.get_data_transfer)
                 
                 
             else:
@@ -366,14 +351,11 @@ class MiApp(QMainWindow):
             
 
     def preparar_campos_por_unidad(self):
-            tipo = self.ui.cmbox_tipo_unidad.currentText() # "Trailer" o "Placa"
+            tipo = self.ui.cmbox_tipo_unidad.currentText() 
+            
 
-            # Aquí cargarías tu JSON (o usarías la variable donde lo tengas)
-            # Por ahora simulamos que 'data_config' es tu JSON:
-            data_config = cargar_todo().get("unidad", {}) 
-
-            if tipo in data_config:
-                config_unidad = data_config[tipo]
+            if tipo :
+                config_unidad = self.data_managet.request_input_type_unit(tipo_unidad=tipo)
                 self.actualizar_inputs_dinamicos(config_unidad)
     def guardar(self):
         guardar = "./test.pdf"

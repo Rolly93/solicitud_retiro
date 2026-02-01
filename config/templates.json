@@ -146,7 +146,9 @@
   },
 
   "unidad":  {
-    "Placa" :{
+
+    "placa" :{
+
     "fields" : [
             { "name": "referencia",       "label":   "Referencia",              "page": 0,  "x": 60,    "y": 191,    "unit": "mm",   "font": "Helvetica",    "size": 20 },
             { "name": "placa",            "label":   "Placa",                   "page": 0,  "x": 67.1,  "y": 179.0,  "unit": "mm",   "font": "Helvetica",    "size": 20 },        
@@ -163,7 +165,8 @@
             { "name": "autoriza",         "label":   "Autoriza",                "page": 0,  "x": 0,     "y": 0,      "unit": "mm",   "font": "Helvetica",    "size": 20 }  
          ]
 },
-    "Trailer":{
+    "trailer":{
+
     "fields" : [
          { "name": "referencia",        "label":"Referencia",              "page": 0,   "x": 60,    "y": 191,   "unit": "mm",  "font": "Helvetica",  "size": 20 },
          { "name": "caja",              "label":"Caja",                    "page": 0,   "x": 67.1,  "y": 179.0, "unit": "mm",  "font": "Helvetica",  "size": 20 },        
@@ -179,7 +182,8 @@
          { "name": "autoriza",          "label":"Autoriza",                "page": 0,   "x": 0,     "y": 0,     "unit": "mm",  "font": "Helvetica",  "size": 20 }
     ]
         }
-    },
+    }
+    ,
     "patios" : [
         {"nombre_patio": "bodega lrd" , 
         "direccion":"Direccion Bodega LRD" 

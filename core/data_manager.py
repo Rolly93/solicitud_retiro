@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from data import cargar_todo
-
+from core.data import cargar_todo
+#from data import cargar_todo
 class DataManager:
     def __init__(self):
         self.base_dir = Path(__file__).parent.parent
@@ -11,8 +11,9 @@ class DataManager:
         
         self.list_solicitud = self.obtener_lista_solicitudes()
         self.list_yard = self.obtener_nombres_patios()
-        
         self.get_data_transfer = self.obtener_transfer()
+        self.list_tipo_unidad = self.obtener_tipo_unidad()
+        
         
     def obtener_lista_solicitudes (self)-> list:
         solicitudes = {str(nombre).replace("-"," ").upper()  
@@ -56,7 +57,7 @@ class DataManager:
         
         return direccion
 
-    def _dict_patios(self)-> dict:
+    def _dict_patios(self)->dict[str:str]:
         
         dict_yard= {
             nombre.get("nombre_patio").upper(): nombre.get("direccion").upper()
@@ -80,7 +81,6 @@ class DataManager:
         }
         return dic_transfer
         
-        pass
     def get_transfer_scac(self, transfer_name :str) ->str:
         
         nombre = transfer_name.lower()
@@ -89,5 +89,31 @@ class DataManager:
         
         return scac.upper()
     
+    def _dict_tipo_request(self,request_input:str)->dict[str,list[dict,str]]:
+        
+        inputs = {
+            
+            unidad:campos 
+            for unidad , campos in
+            cargar_todo()["unidad"][request_input].items()
+        }        
+        return inputs
+    
+    def request_input_type_unit(self, tipo_unidad :str)->dict[str,list]:
+        inptus = self._dict_tipo_request(tipo_unidad.lower())
+        
+        return inptus
+        
+        
+        
+    
+    def obtener_tipo_unidad(self)->list[str]:
+        tipo_unidad = [unidad.upper()
+                       for unidad in
+                       cargar_todo()["unidad"]]
+        
+        return tipo_unidad
+    
 data = DataManager()
-print(data.obtener_transfer())
+print(data.request_input_type_unit("placa"))
+
