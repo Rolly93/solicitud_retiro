@@ -3,14 +3,16 @@ import sys
 import fitz
 from pathlib import Path
 from PySide6 import  QtCore
-from data import cargar_todo , get_coord
 from PySide6.QtCore import Qt
-from data import cargar_patios , get_data_transfer
 from PySide6.QtGui import QPainter 
 from ui.main_ui import Ui_MainWindow 
+from core.pdf_service import PDFService
 from PySide6.QtGui import QPixmap ,QImage 
+from core.data import cargar_todo , get_coord  , get_data_transfer
 from PySide6.QtWidgets import QMessageBox ,QLineEdit ,QLabel , QComboBox
-from PySide6.QtWidgets import QApplication, QMainWindow ,QGraphicsScene ,QGraphicsPixmapItem, QGridLayout, QLabel, QLineEdit , QWidget
+from PySide6.QtWidgets import QApplication, QMainWindow ,QGraphicsScene ,QGraphicsPixmapItem, QGridLayout, QLabel, QLineEdit ,QWidget
+
+from  core.data_manager import DataManager
 
 class PDFGraphicsItem(QGraphicsPixmapItem):
     # Definimos una señal personalizada (necesita heredar de QObject para señales, 
@@ -29,6 +31,12 @@ class PDFGraphicsItem(QGraphicsPixmapItem):
 class MiApp(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.pdf_service = PDFService()
+        self.data_managet = DataManager()
+        
+        self.total_paginas = 0
+        self.page_actual = 0
+
         self._aduana = ""
         self._tipo_solicitud = ""
         self._tipo_unidad = ""
@@ -40,10 +48,9 @@ class MiApp(QMainWindow):
         self._scac = ""
         self._name_transfer = ""
         self._doc = None
-        self.page_actual = 0
-        self.total_paginas = 0
-        self.lista_solicitudes = list(sorted([format_solicitu for format_solicitu in self.dic_file_route()]))
-        self.dic_solicitudes = self.dic_file_route()
+        self.lista_solicitudes = self.data_managet.list_solicitud
+
+        self.dic_solicitudes = self.data_managet._dict_solicitudes()
         self.inputs_extra = {}
         self.i_values_extra={}
         
@@ -90,8 +97,8 @@ class MiApp(QMainWindow):
         self.ui.cmbox_tipo_unidad.addItems(["Trailer","Placa"])
         self.ui.cmbox_tipo_unidad.currentTextChanged.connect(self.preparar_campos_por_unidad)
 
-        self.ui.cmbox_origen.addItems(self.cargar_patios())
-        self.ui.cmbox_destino.addItems(self.cargar_patios())
+        self.ui.cmbox_origen.addItems(self.data_managet.list_yard)
+        self.ui.cmbox_destino.addItems(self.data_managet.list_yard)
        
         self.ui.btn_previsuzalizar.clicked.connect(self.previsualizar_pdf)
         self.ui.display_pdf
@@ -105,12 +112,11 @@ class MiApp(QMainWindow):
         
         #for combo in self.combos_box:
         #    combo.installEventFilter(self)
-        
-        if self.dic_solicitudes:
-            QtCore.QTimer.singleShot(0, self.cambio_plantilla)
 
-        if self.ui.cmbox_tipo_unidad:
+
+        if self.ui.cmbox_tipo_unidad or self.dic_solicitudes:
             QtCore.QTimer.singleShot(0, self.preparar_campos_por_unidad)
+            QtCore.QTimer.singleShot(0, self.cambio_plantilla)
             
         
 
@@ -130,12 +136,6 @@ class MiApp(QMainWindow):
         return super().eventFilter(obj, event)
 
 
-    def get_file_route(self):
-        ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-        ASSTES_DIR = os.path.join(ROOT_DIR, "assets")
-
-        file_names = [route_plantilla.get("filename","") for route_plantilla in cargar_todo().get("solicitud", {}).values()]
-        route_filename = [os.path.join(ASSTES_DIR, filename) for filename in file_names]
 
     
     def return_values_dynamic(self ,dynamic_values ):
@@ -148,33 +148,31 @@ class MiApp(QMainWindow):
                 data_input[nombre_campo] =wdget.currentText()
         return data_input
 
-
-    def previsualizar_pdf(self):
+    def recolectar_formularios(self):
         
-        data = {}
-        self.i_values_extra = self.return_values_dynamic(self.inputs_extra.items())
-                
+        
+        datos = {
+        "referencia" :self.ui.input_Referencia.text(),
+        "aduana" :self.ui.cobox_aduana.currentText(),
+        "tipo_solicitud" :self.ui.cmbox_formato.currentText(),
+        "tipo_unidad" :self.ui.cmbox_tipo_unidad.currentText(),
+        "origen" :self.ui.cmbox_origen.currentText(),
+        "destino" :self.ui.cmbox_destino.currentText()
+        }
+        datos.update(self.return_values_dynamic(self.inputs_extra.items()))
+        
+        return datos
+        
+    def previsualizar_pdf(self):
+
         referencia = self.ui.input_Referencia.text()
         if not self._isvalid_reference(referencia):
             return
-       
-        self._aduana = self.ui.cobox_aduana.currentText()
-        self._tipo_solicitud = self.ui.cmbox_formato.currentText()
-        self._tipo_unidad = self.ui.cmbox_tipo_unidad.currentText()
-        self._origen = self.ui.cmbox_origen.currentText()
-        self._destino = self.ui.cmbox_destino.currentText()
-        self._referencia = self.ui.input_Referencia.text()
-        
-        data["referencia"] = self._referencia
-        data["aduana"] = self._aduana
-        data["tipo_solicitud"] = self._tipo_solicitud
-        data["tipo_unidad"] = self._tipo_unidad
-        data["origen"] = self._origen
-        data["destino"] = self._destino
 
-        self.i_values_extra.update(data)
+        datos =self.recolectar_formularios()
 
-        self.escribir_en_pdf(self.i_values_extra)
+        self.pdf_service.escribir_campos(datos , get_coord)
+        self.mostrar_pagina()
 
 
         
@@ -214,68 +212,37 @@ class MiApp(QMainWindow):
             nombre_patio = dialog_adress.ui.name_yard.text()
             adress_patio = dialog_adress.ui.address_yard.text()
         
-    def dic_file_route(self):
-        from pathlib import Path
-        
-        ASSTES_DIR = Path(__file__).parent / "assets"
 
-        dic_format = {
-        nombre:  str(ASSTES_DIR / ruta.get("filename", ""))
-        
-          for nombre, ruta in cargar_todo().get("solicitud", {}).items() 
-    }
-        return dic_format
 
-    def cargar_patios(self):
-        patios = [patio.get("name") for patio in cargar_patios() ]
-        
-        return patios
+
     
         
 
     def cambio_plantilla(self ):
         
         nombre_solicitud = self.ui.cmbox_formato.currentText()
-        nombre_solicitud = nombre_solicitud.replace(" ","-").lower()
         
-        if nombre_solicitud in self.dic_solicitudes:
-            pdf_route = Path(__file__).parent /self.dic_solicitudes[nombre_solicitud]
-
-        if pdf_route.exists():
-            try:
-                if self._doc:
-                    self._doc.close()
-                
-                self._doc = fitz.open(str(pdf_route))   
-                self.tota_pages = self._doc.page_count
-                self.page_actual = 0
-                self.mostrar_pagina()
-                
-            except Exception as e:
-                print(f"Error al abrir PDF: {e}")
-        else:
-            print(f"Archivo no encontrado en: {pdf_route}")
-
-    def mostrar_pagina(self):
-        if not self._doc:
-            return
-
         try:
-            page = self._doc.load_page(self.page_actual)
-            
-            # Renderizado de alta calidad (Zoom 2.0)
-            mat = fitz.Matrix(2.0, 2.0)
-            pix = page.get_pixmap(matrix=mat, alpha=False)
-            
-            # Conversión a formato Qt
-            img = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
-            self.pdf_item.setPixmap(QPixmap.fromImage(img))
-            self.ui.lbl_page_counter.setText(f"Pagina {self.page_actual + 1} / {self.total_paginas}")
-
-            self.ui.display_pdf.fitInView(self.pdf_item, Qt.KeepAspectRatio)
+            pdf_route = self.data_managet.obtener_ruta_solicitud(nombre_solicitud)
+            self.total_paginas = self.pdf_service.cargar_documento(pdf_route)
+            self.page_actual = 0
+            self.mostrar_pagina()
             
         except Exception as e:
-            print(f"Error al renderizar página: {e}")
+            print(f"Error al cambiar de plantilla: \t {e}")
+
+        
+    def mostrar_pagina(self):
+        
+
+        pix = self.pdf_service.obtener_pixmap(self.page_actual)
+        
+        if pix:
+            img = QImage(pix.samples,pix.width , pix.height,pix.stride , QImage.Format_RGB888)
+            
+            self.pdf_item.setPixmap(QPixmap.fromImage(img))
+            self.ui.lbl_page_counter.setText(f"Pagina {self.page_actual +1} / {self.total_paginas} ")
+            self.ui.display_pdf.fitInView(self.pdf_item , Qt.KeepAspectRatio)
 
 
 
@@ -365,34 +332,6 @@ class MiApp(QMainWindow):
                 columna = 0
                 offset_fila += 1
 
-    def escribir_en_pdf(self, input_values):
-        if not self._doc or not input_values: return
-        page = self._doc.load_page(0) 
-
-        # Constante universal: 72 pts/pulgada / 25.4 mm/pulgada
-        MM_TO_PTS = 2.83465
-
-        tipo_solicitud = input_values.get("tipo_solicitud")
-        values = {k: v for k, v in input_values.items() if k != "tipo_solicitud"}
-
-        for name, value in values.items():
-            coords = get_coord(tipo_solicitud, name)
-            if not coords or coords[0] is None: continue
-
-            x_mm, y_mm = coords
-
-            # Conversión directa y limpia
-            x_pts = x_mm * MM_TO_PTS
-            y_pts = y_mm * MM_TO_PTS
-
-            if value:
-                # Ajustamos un poco y_pts (-2) para que el texto no "pise" la línea
-                page.insert_text((x_pts, y_pts - 2), str(value), 
-                                 fontsize=15, # Tamaño más estándar para formularios
-                                 fontname="helv",
-                                 color=(0, 0, 0))
-
-        self.mostrar_pagina()
             
     def restablecer_order_tab(self):
         order_widgets = [
