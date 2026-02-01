@@ -332,7 +332,7 @@ class MiApp(QMainWindow):
         for field in config_unidad["fields"]:
             if field["name"] in ["referencia", "origen", "destino"]:
                 continue
-            
+            #aqui tengo que agregar las observaciones
             if field["name"] in ["linea_transporte"]:
                 line_edit = QComboBox()
                 line_edit.addItems(get_data_transfer().keys())
