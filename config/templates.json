@@ -190,8 +190,8 @@
         
     ],
     "linea_transporte":    [
-      {"name" : "FEMA" , "scac" : "TFSQ"},
-      {"name" : "MOGA" , "scac" : "MOGF"}
+      {"name" : "fema" , "scac" : "tfsq"},
+      {"name" : "moga" , "scac" : "mogf"}
 
     ]
     

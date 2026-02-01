@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from core.data import cargar_todo
+from data import cargar_todo
 
 class DataManager:
     def __init__(self):
@@ -11,7 +11,8 @@ class DataManager:
         
         self.list_solicitud = self.obtener_lista_solicitudes()
         self.list_yard = self.obtener_nombres_patios()
-        self.ruta = self.obtener_ruta_solicitud("CFI SOLICITUD RETIRO")
+        
+        self.get_data_transfer = self.obtener_transfer()
         
     def obtener_lista_solicitudes (self)-> list:
         solicitudes = {str(nombre).replace("-"," ").upper()  
@@ -66,6 +67,27 @@ class DataManager:
         
         return dict_yard
 
-
+    def obtener_transfer(self) ->list:
+        transfer_data = [transfer.get("name").upper() 
+                         for transfer in cargar_todo().get("linea_transporte")]
+        
+        return transfer_data
+    
+    def _dict_linea_trasnfer(self)->dict:
+        dic_transfer = {
+            name.get("name") : name.get("scac")
+            for name in cargar_todo()["linea_transporte"]
+        }
+        return dic_transfer
+        
+        pass
+    def get_transfer_scac(self, transfer_name :str) ->str:
+        
+        nombre = transfer_name.lower()
+        scac = self._dict_linea_trasnfer()[nombre]
+        
+        
+        return scac.upper()
+    
 data = DataManager()
-data.obtener_direccion("BODEGA LRD")
+print(data.obtener_transfer())
