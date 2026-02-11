@@ -25,19 +25,6 @@ def cargar_patios():
 
 
 
-def get_coord(destino:str , name:str)->list:
-    """funcion para extaer las coordenadas de las plantillas dependiendo de 
-    la plantilla seleccionada"""
-    solicitudes = (patios for patios in cargar_todo()["solicitud"].items())
-
-    for solicitud ,coodr  in solicitudes:
-        is_requested = solicitud == destino
-        if is_requested:
-            for cord in coodr["fields"]:
-                if cord["name"] == name:
-                    
-                    return [cord["x"] , cord["y"]]
-    return [None,None]
 
 
 

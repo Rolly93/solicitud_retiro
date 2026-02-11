@@ -114,6 +114,27 @@ class DataManager:
         
         return tipo_unidad
     
+    def get_coord(self,destino:str , name :str)->list:
+        """
+        Funcion par extraer las coordenadas de las plantillas dependiendo de la plantilla seleccionada
+        
+        """
+        solicitudes = (patios for patios in cargar_todo()["solicitud"].items())
+
+        for solicitud ,coodr  in solicitudes:
+            is_requested = solicitud == destino
+            if is_requested:
+                for cord in coodr["fields"]:
+                    if cord["name"] == name:
+
+                        return [cord["x"] , cord["y"]]
+        return [None,None]
+    
+    def validar_Referencia(self,referecia:str) ->bool:
+        count = len(referecia)
+        ref= referecia.upper()
+        
+        return count == 10 and (ref.startswith("92B") or ref.startswith("82B"))
+        
 data = DataManager()
-print(data.request_input_type_unit("placa"))
 

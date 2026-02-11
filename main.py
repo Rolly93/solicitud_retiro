@@ -1,14 +1,10 @@
-import os
 import sys
-import fitz
-from pathlib import Path
 from PySide6 import  QtCore
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter 
 from ui.main_ui import Ui_MainWindow 
 from core.pdf_service import PDFService
 from PySide6.QtGui import QPixmap ,QImage 
-from core.data import cargar_todo , get_coord  , get_data_transfer
 from PySide6.QtWidgets import QMessageBox ,QLineEdit ,QLabel , QComboBox
 from PySide6.QtWidgets import QApplication, QMainWindow ,QGraphicsScene ,QGraphicsPixmapItem, QGridLayout, QLabel, QLineEdit ,QWidget
 
@@ -166,14 +162,14 @@ class MiApp(QMainWindow):
 
         datos =self.recolectar_formularios()
 
-        self.pdf_service.escribir_campos(datos , get_coord)
+        self.pdf_service.escribir_campos(datos , self.data_managet.get_coord)
         self.mostrar_pagina()        
 
         
 
     def _isvalid_reference(self,referencia):
-        count_characteres = len(referencia)
-        if not count_characteres == 10 and not (referencia.startswith("92B") or referencia.startswith("82B")) :
+        
+        if not self.data_managet.validar_Referencia(referencia):
             msg = QMessageBox(self)
             msg.setIcon(QMessageBox.Critical) 
             msg.setWindowTitle("Error de Referencia")
