@@ -1,15 +1,20 @@
+
 import sys
 from PySide6 import  QtCore
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QPainter 
+from PySide6.QtCore import Qt  
 from ui.main_ui import Ui_MainWindow 
 from core.pdf_service import PDFService
-from PySide6.QtGui import QPixmap ,QImage 
-from PySide6.QtWidgets import QMessageBox ,QLineEdit ,QLabel , QComboBox
-from PySide6.QtWidgets import QApplication, QMainWindow ,QGraphicsScene ,QGraphicsPixmapItem, QGridLayout, QLabel, QLineEdit ,QWidget
-
+from ui.form_manager import FormManager 
 from  core.data_manager import DataManager
-
+from PySide6.QtGui import QPainter ,QPixmap ,QImage 
+from PySide6.QtWidgets import( QMessageBox ,
+                              QComboBox,
+                              QLineEdit ,
+                              QApplication,
+                              QMainWindow ,
+                              QGraphicsScene ,
+                              QGraphicsPixmapItem,
+)
 class PDFGraphicsItem(QGraphicsPixmapItem):
     # Definimos una señal personalizada (necesita heredar de QObject para señales, 
     # pero para simplicidad usaremos un callback)
@@ -59,6 +64,7 @@ class MiApp(QMainWindow):
 
         self.combos_box = [self.ui.cmbox_destino, self.ui.cmbox_origen, self.ui.cmbox_formato, self.ui.cmbox_tipo_unidad , self.ui.cobox_aduana]
         
+        self.form_manager =FormManager(self, self.ui.frame_5, self.data_managet)
         
         
         
@@ -189,6 +195,8 @@ class MiApp(QMainWindow):
         if dialog_transfer.exec():
             scac = dialog_transfer.ui.scac_transfer.text()
             name_transfer = dialog_transfer.ui.name_linea_transfer.text()
+            
+            self.data_managet.insert_new_transfer(name_transfer,scac)
         
 
     def popout_addres_form(self):
@@ -227,91 +235,6 @@ class MiApp(QMainWindow):
             self.ui.display_pdf.fitInView(self.pdf_item , Qt.KeepAspectRatio)
 
 
-
-    def actualizar_inputs_dinamicos(self, config_unidad):
-        # 1. Referenciamos el layout que viene del UI (verticalLayout_7)
-        # Si aún es un QVBoxLayout, lo vamos a manejar.
-
-        self.inputs_extra.clear()
-        layout = self.ui.verticalLayout_7 
-
-        # 2. Limpieza de widgets antiguos
-        for i in reversed(range(layout.count())):
-            item = layout.itemAt(i)
-            if item.widget():
-                widget = item.widget()
-                # No borrar los elementos base
-                if widget.objectName() not in ["lbl_datos_embarque", "lbl_origen", "cmbox_origen", 
-                                             "lbl_destino", "cmbox_destino", "lbl_referencia", "input_Referencia"]:
-                    widget.deleteLater()
-
-
-        # Verificamos si ya hemos hecho el cambio, si no, lo cambiamos.
-        if not isinstance(layout, QGridLayout):
-            # Guardamos los widgets fijos que queremos conservar
-            fijos = [self.ui.lbl_datos_embarque, self.ui.lbl_origen, self.ui.cmbox_origen, 
-                     self.ui.lbl_destino, self.ui.cmbox_destino, self.ui.lbl_referencia, self.ui.input_Referencia]
-
-            # Creamos el nuevo layout de rejilla
-            nuevo_layout = QGridLayout()
-            nuevo_layout.setSpacing(10)
-
-            # Re-insertamos los fijos al principio del nuevo layout (ocupando 2 columnas)
-            for fila, widget in enumerate(fijos):
-                nuevo_layout.addWidget(widget, fila, 0, 1, 2) # span de 2 columnas
-
-            # Reemplazamos el layout del frame_5
-            from PySide6.QtWidgets import QLayout
-            old_layout = self.ui.frame_5.layout()
-            if old_layout:
-
-                QWidget().setLayout(old_layout) 
-
-            self.ui.frame_5.setLayout(nuevo_layout)
-            self.ui.verticalLayout_7 = nuevo_layout # Actualizamos la referencia
-            layout = nuevo_layout
-
-
-        
-        fila_inicio_dinamica = 7
-        columna = 0
-        offset_fila = 0
-
-        for field in config_unidad["fields"]:
-            if field["name"] in ["referencia", "origen", "destino"]:
-                continue
-            #aqui tengo que agregar las observaciones
-            if field["name"] in ["linea_transporte"]:
-                line_edit = QComboBox()
-                line_edit.addItems(self.data_managet.get_data_transfer)
-                
-                
-            else:
-                line_edit = QLineEdit()
-                line_edit.returnPressed.connect(self.focusNextChild)
-
-            label = QLabel(field["label"])
-            line_edit.setObjectName(f"input_{field['name']}")
-
-            # Calculamos posición
-            # Columna 0 usa c0 y c1 | Columna 1 usa c2 y c3
-            r = fila_inicio_dinamica + offset_fila
-            c_label = 0 if columna == 0 else 2
-            c_input = 1 if columna == 0 else 3
-
-            layout.addWidget(label, r, c_label)
-            layout.addWidget(line_edit, r, c_input)
-
-            self.inputs_extra[field["name"]] = line_edit
-            
-            self.restablecer_order_tab()
-
-            # Lógica de alternancia
-            if columna == 0:
-                columna = 1
-            else:
-                columna = 0
-                offset_fila += 1
 
             
     def restablecer_order_tab(self):
@@ -352,7 +275,13 @@ class MiApp(QMainWindow):
 
             if tipo :
                 config_unidad = self.data_managet.request_input_type_unit(tipo_unidad=tipo)
-                self.actualizar_inputs_dinamicos(config_unidad)
+
+                self.inputs_extra = self.form_manager.generar_formulario(config_unidad)
+                self.ui.verticalLayout_7 = self.ui.frame_5.layout()
+                self.restablecer_order_tab()
+                
+                
+                
     def guardar(self):
         guardar = "./test.pdf"
 
@@ -362,29 +291,25 @@ class MiApp(QMainWindow):
     def on_pdf_click(self, x_pix, y_pix):
         if not self._doc: return
 
-        # 1. Obtener dimensiones reales del PDF en puntos (pts)
-        rect = self._doc.load_page(0).rect
-        pdf_w_pts = rect.width
-        pdf_h_pts = rect.height
 
-        # 2. Obtener el tamaño de la imagen renderizada (Pixmap)
-        # Esto es vital para manejar el zoom de 2.0 correctamente
         pixmap_rect = self.pdf_item.pixmap().rect()
         img_w = pixmap_rect.width()
         img_h = pixmap_rect.height()
-
-        # 3. Mapear Píxel -> Punto PDF (Regla de 3)
-        x_pt = (x_pix / img_w) * pdf_w_pts
-        y_pt = (y_pix / img_h) * pdf_h_pts
-
-        # 4. Convertir Punto PDF -> Milímetros (1mm = 2.83465 pts)
-        x_mm = x_pt / 2.83465
-        y_mm = y_pt / 2.83465
+        
+        coords = self.pdf_service.calcular_coordenadas_click(
+            x_pix,
+            y_pix,
+            img_h,
+            img_w,
+            self.page_actual
+        )
+        if coords:
+            x_mm , y_mm = coords
 
         print(f"--- NUEVA CALIBRACIÓN ---")
         print(f"X: {x_mm:.2f} mm, Y: {y_mm:.2f} mm")
 
-        # Copiar al portapapeles en formato listo para data.py
+
         QApplication.clipboard().setText(f'"x": {x_mm:.2f}, "y": {y_mm:.2f}')
         self.ui.statusbar.showMessage(f"Copiado: X={x_mm:.2f}, Y={y_mm:.2f}")
 
