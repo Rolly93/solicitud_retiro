@@ -116,7 +116,17 @@ class MiApp(QMainWindow):
             QtCore.QTimer.singleShot(0, self.cambio_plantilla)
             
         
-
+    def handle_error(func):
+        def wrapper(self,*args,**kwargs):
+            try:
+                return func(self,*args, **kwargs)
+            except ValueError as e:
+                self.show_message("Dato Invalido", "hubo un un problema con los datos",e,"warning" )
+            except Exception as e:
+                self.show_message("Erro del Sistema","Ocurrio un error inesperado",e,"error")
+        return wrapper
+        
+        
     def eventFilter(self, obj, event):
         if event.type() == QtCore.QEvent.KeyPress:
             if event.key() in (Qt.key_Return , Qt.Key_Enter):
@@ -172,41 +182,38 @@ class MiApp(QMainWindow):
         self.mostrar_pagina()        
 
         
-
+    @handle_error
     def _isvalid_reference(self,referencia):
         
-        if not self.data_managet.validar_Referencia(referencia):
-            msg = QMessageBox(self)
-            msg.setIcon(QMessageBox.Critical) 
-            msg.setWindowTitle("Error de Referencia")
-            msg.setText("La referencia ingresada es inválida.")
-            msg.setInformativeText("Asegúrese de que tenga 10 caracteres y comience con '92B' o '82B'.")
-            msg.exec()
-            return False
-        return True           
-            
+        self.data_managet.validar_Referencia(referencia)
+        self.show_message("Exito","Referencia Correcta",f"Referencia:\n {referencia} correcta" , "info")    
 
 
+    @handle_error
     def popout_tranferForm(self):
         from popout import TransferForm
         
         dialog_transfer = TransferForm(self)
-
+            
         if dialog_transfer.exec():
             scac = dialog_transfer.ui.scac_transfer.text()
             name_transfer = dialog_transfer.ui.name_linea_transfer.text()
-            
-            self.data_managet.insert_new_transfer(name_transfer,scac)
-        
 
+            self.data_managet.insert_new_transfer(name_transfer,scac)
+                
+        self.show_message("Exito","Transfer Guardado",f"El Patio {name_transfer} se registro correctamente","info")
+
+    @handle_error
     def popout_addres_form(self):
         from popout import AdressForm
         dialog_adress = AdressForm(self)
 
         if dialog_adress.exec():
             nombre_patio = dialog_adress.ui.name_yard.text()
-            adress_patio = dialog_adress.ui.address_yard.text()    
-        
+            address_patio = dialog_adress.ui.address_yard.text()    
+            
+            self.data_managet.insert_new_address(nombre_patio,address_patio)
+        self.show_message("Exito","Patio Guardado",f"El Patio {nombre_patio} se registro correctamente","info")
 
     def cambio_plantilla(self ):
         
@@ -312,6 +319,26 @@ class MiApp(QMainWindow):
 
         QApplication.clipboard().setText(f'"x": {x_mm:.2f}, "y": {y_mm:.2f}')
         self.ui.statusbar.showMessage(f"Copiado: X={x_mm:.2f}, Y={y_mm:.2f}")
+    def show_message(self,title,header,txt,type="error"):
+        """fabrica de mensajes centralizado"""
+        
+        msg = QMessageBox(self)
+        
+        config = {
+            "error":(QMessageBox.Critical,"Error"),
+            "warning":(QMessageBox.Warning,"Advertencia"),
+            "info":(QMessageBox.Information,"Informacion")
+                       
+        }
+        
+        icon,default_title = config.get(type,config["info"])
+        
+        msg.setIcon(icon)
+        msg.setWindowTitle(title or default_title)
+        msg.setText(header)
+        msg.setInformativeText(str(txt))
+        msg.exec()
+        
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

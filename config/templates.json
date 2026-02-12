@@ -744,6 +744,10 @@
         {
             "nombre_patio": "gtr",
             "direccion": "Direccion GTR"
+        },
+        {
+            "nombre_patio": "GTR",
+            "direccion": "Libramiento Mex II Km 6.780 interior, Rancho Maria Luisa, 88174"
         }
     ],
     "linea_transporte": [
@@ -759,6 +763,5 @@
             "name": "GALA-SCL, S.A. de C.V.",
             "scac": "GALA"
         }
-
     ]
 }

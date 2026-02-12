@@ -134,19 +134,35 @@ class DataManager:
     def validar_Referencia(self,referecia:str) ->bool:
         count = len(referecia)
         ref= referecia.upper()
+        count == 10 and (ref.startswith("92B") or ref.startswith("82B"))
+        if not count:
+            raise ValueError (f"Referencia: \n{ref} es invalida")
         
-        return count == 10 and (ref.startswith("92B") or ref.startswith("82B"))
+    def insert_new_address (sefl,name:str,address:str)->None:
         
+        if "patios" not in sefl._all_data:
+            sefl._all_data["patios"] = []
+        if sefl.does_exist(name
+                           ,address
+                           ,"patios",
+                           "nombre_patio",
+                           "direccion"):
+            raise ValueError  (f"El Patio {name} ya existe en el registro")
+        
+        new_yard ={
+            "nombre_patio":name,
+            "direccion":address
+        }
+        sefl._all_data["patios"].append(new_yard)
+        
+        update_file(sefl._all_data)
     def insert_new_transfer(self,transfername:str=None, scac:str = None)->None:
         
    
         if "linea_transporte" not in self._all_data:
             self._all_data["linea_transporte"] = []
-            
-        existe_nombre = any(item["name"].lower() == transfername.lower() for item in self._all_data["linea_transporte"])
-        existe_scac = any(item["scac"].upper() == scac.upper() for item in self._all_data["linea_transporte"])
-        
-        if existe_scac or existe_nombre  :
+
+        if self.does_exist(transfername,scac,"linea_transporte","name","scac")  :
             print("Transfer Duplicado")
             return
         
@@ -159,13 +175,20 @@ class DataManager:
         
         update_file(self._all_data)
     
-    def does_exist(self, v1 , v2):
+    def does_exist(self, key:str , value:str , main_key:str , dict_key:str , dict_value:str):
         
-        is_duplicate1 = any(item["name"].lower() == v1.lower() for item in self._all_data["linea_transporte"])
-        is_duplicate2= any(item["scac"].upper() == v2.upper() for item in self._all_data["linea_transporte"])
+        is_duplicate1 = any(
+            item[f"{dict_key}"].lower() == key.lower().strip()
+            for item in self._all_data[f"{main_key}"])
         
-        if is_duplicate1 == is_duplicate2:
+        is_duplicate2= any(
+            item[f"{dict_value}"].upper() == value.upper().strip()
+                           for item in self._all_data[f"{main_key}"])
+        
+        if is_duplicate1 or is_duplicate2:
             return True
         return False
+    
+    
 data = DataManager()
 
