@@ -10,15 +10,15 @@ Este proyecto es una solución de software diseñada para **automatizar y estand
 El objetivo principal es eliminar la captura manual de datos (que es propensa a errores humanos), asegurar la integridad de la información y reducir los tiempos de espera en la ventanilla de despacho.
 
 ## 🚧 El Problema (Contexto de Negocio)
-En la operación logística tradicional, las solicitudes de retiro suelen hacerse mediante correos electrónicos no estructurados o formatos en papel. Esto ocasiona:
+En la operación logística tradicional, las solicitudes de retiro suelen hacerse mediante correos electrónicos no estructurados o formatos en papel o algun formato excel. Esto ocasiona:
 * **Errores de captura:** Datos incorrectos en números de parte o cantidades.
 * **Pérdida de trazabilidad:** Dificultad para saber quién solicitó qué y cuándo.
-* **Retrasos operativos:** El Agente de trafico pierde tiempo en estar generando archivos por indivuales, asi como el cheklist delivery order + la solicitud de retiro.
+* **Retrasos operativos:** El Agente de trafico pierde tiempo en estar generando archivos indivuales, asi como el cheklist delivery order + la solicitud de retiro.
 * **Proceso Manual:** El Agente se demora en subir los documentos a la plataforma digital.
 
 ## 🛠 La Solución
 Desarrollé una aplicación en **Python** que funciona como una interfaz de control para:
-1.  **Validar datos de entrada:** Asegura que los campos críticos (Pedimento, # de Parte, Cantidad) cumplan con el formato correcto antes de procesar.
+1.  **Validar datos de entrada:** Asegura que los campos críticos (Pedimento, Numero de guia y/o Numero de Caja, Cantidad) cumplan con el formato correcto antes de procesar.
 2.  **Generación Automática:** Crea los documentos de salida necesarios en formato PDF, cual seria 3 archivos y los sube a la plataforma digital.
 
 ## 📸 Demo / Capturas de Pantalla
