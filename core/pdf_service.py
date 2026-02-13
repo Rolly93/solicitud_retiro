@@ -82,6 +82,8 @@ class PDFService:
                 )
 
     def guardar_como(self, ruta_destino: str):
+        
+        ruta_destino = f"./documents/{ruta_destino}.pdf"
         if self.doc:
             self.doc.save(ruta_destino, garbage=4, deflate=True)
 
