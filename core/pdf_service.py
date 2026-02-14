@@ -1,5 +1,6 @@
 import fitz
 from pathlib import Path
+from data_manager import DataManager
 
 class PDFService:
     MM_TO_PTS = 2.83465
@@ -7,6 +8,7 @@ class PDFService:
     def __init__(self):
         self.doc = None
         self.current_path = None
+        self.data = DataManager() 
         
     
     def is_empty_page(self):
@@ -56,7 +58,9 @@ class PDFService:
         y una función que provea las coordenadas.
         """
         if not self.doc: return self.is_empty_page()
-        
+        direccion  ={
+            "direccion": self.data.obtener_direccion(campos.get("destino", ""))
+        }
         page = self.doc.load_page(0)
         tipo_solicitud = campos.get("tipo_solicitud", "").lower().replace(" ", "-")
 
@@ -76,10 +80,11 @@ class PDFService:
             page.insert_text(
                     (x_pts, y_pts), 
                     str(valor),
-                    fontsize=15,
+                    fontsize=12,
                     fontname="helv",
                     color=(0, 0, 0)
                 )
+
 
     def guardar_como(self, ruta_destino: str):
         
