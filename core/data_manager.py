@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from core.data import cargar_todo , update_file
-#from data import cargar_todo
+#from core.data import cargar_todo , update_file
+from data import cargar_todo , update_file
 class DataManager:
     def __init__(self):
         self.base_dir = Path(__file__).parent.parent
@@ -53,10 +53,21 @@ class DataManager:
         direc = self._dict_patios()
         yard = patio.upper()
         direccion = direc[yard]
-
-        print(direccion)
+        print(len(direccion))
+        i=0
+        while i < len(direccion):
+            if not direccion[i].isspace():
+                print(direccion[i])
+            i += 1
+                
         
-        return direccion
+        
+        
+
+
+        
+        return direccion[:37]
+    
 
     def _dict_patios(self)->dict[str:str]:
         
@@ -137,6 +148,7 @@ class DataManager:
         count == 10 and (ref.startswith("92B") or ref.startswith("82B"))
         if not count:
             raise ValueError (f"Referencia: \n{ref} es invalida")
+        return True
         
     def insert_new_address (sefl,name:str,address:str)->None:
         
@@ -191,4 +203,5 @@ class DataManager:
     
     
 data = DataManager()
+print(data.obtener_direccion("gns"))
 
