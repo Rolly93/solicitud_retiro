@@ -5,90 +5,74 @@
             "fields": [
                 {
                     "name": "fecha",
-                    "x": 53.71,
-                    "y": 89.7
+                    "x": 169.52,
+                    "y": 19.46
+                },{
+                     "name": "referencia",
+                     "x":124.65,
+                     "y":26.83
                 },
+                {"name":"aduana","x":119.29,"y":30.14},
                 {
-                    "name": "caja",
-                    "x": 66.23,
-                    "y": 99.08
+                    "name": "bultos", "x":118.11 ,"y":43.9
+                },
+                {"name": "peso", "x":115.82,"y":48.0},
+                {
+                        "name": "origen",
+                        "x":120.4,
+                        "y":34.03
                 },
                 {
                     "name": "destino",
-                    "x": 103.78,
-                    "y": 123.59
+                    "x": 120.72,
+                    "y": 38.93
                 },
                 {
-                    "name": "aa_mx",
-                    "x": 71.97,
-                    "y": 135.59
-                },
+                    "name": "caja",
+                    "x": 129.69,
+                    "y": 86.74
+                },{
+                    "name": "placas","x":131.19,"y":91.28
+                },{"name": "placa","x":172.74,"y":86.70},
+                
                 {
                     "name": "pedimento",
-                    "x": 64.67,
-                    "y": 158.54
+                    "x": 19.46,
+                    "y": 65.67
                 },
                 {
                     "name": "linea_transporte",
-                    "x": 92.83,
-                    "y": 171.57
+                    "x": 193.89,
+                    "y": 266.53
                 },
                 {
                     "name": "autoriza",
-                    "x": 73.01,
-                    "y": 226.85
+                    "x": 51.69,
+                    "y": 41.55
                 },
                 {
                     "name": "cliente",
-                    "x": 60.49,
-                    "y": 110.56
+                    "x": 23.29,
+                    "y": 142.84
                 }
             ]
         },
         "delivery-order": {
             "filename": "delivery-order.pdf",
-            "fields": [
-                {
-                    "name": "fecha",
-                    "x": 53.71,
-                    "y": 89.7
-                },
-                {
-                    "name": "caja",
-                    "x": 66.23,
-                    "y": 99.08
-                },
-                {
-                    "name": "destino",
-                    "x": 103.78,
-                    "y": 123.59
-                },
-                {
-                    "name": "aa_mx",
-                    "x": 71.97,
-                    "y": 135.59
-                },
-                {
-                    "name": "pedimento",
-                    "x": 64.67,
-                    "y": 158.54
-                },
-                {
-                    "name": "linea_transporte",
-                    "x": 92.83,
-                    "y": 171.57
-                },
-                {
-                    "name": "autoriza",
-                    "x": 73.01,
-                    "y": 226.85
-                },
-                {
-                    "name": "cliente",
-                    "x": 60.49,
-                    "y": 110.56
-                }
-            ]
+            "fields": [{
+                "name": "referencia", "x":28.57 , "y": 29.82
+            },
+            {
+                "name":"origen","x":112.07,"y":39.22
+            },
+            {"name": "destino", "x": 10.07, "y": 40.50},
+            {"name":"fecha","x":176.20,"y":30.88},
+            {"name":"bultos","x":10.36,"y":119.92},
+            {"name":"caja","x":61.22,"y":133.11},
+            {"name":"sello","x":57.76,"y":137.82},
+            {"name":"peso","x":164.50,"y":130.28},
+            {"name":"placa","x":61.22,"y":133.11}
+        ]
         },
         "cfi-solicitud-retiro": {
             "filename": "cfi-solicitud-retiro.pdf",
@@ -195,68 +179,63 @@
             "fields": [
                 {
                     "name": "fecha",
-                    "x": 142.6,
-                    "y": 32.65
+                    "x": 151.32,
+                    "y": 39.24
                 },
                 {
                     "name": "caja",
-                    "x": 83.32,
-                    "y": 66.84
+                    "x": 57.45,
+                    "y": 92.30
                 },
                 {
                     "name": "caja_dueno",
-                    "x": 126.43,
-                    "y": 65.08
+                    "x": 123.69,
+                    "y": 93.87
                 },
                 {
                     "name": "placas",
-                    "x": 84.15,
-                    "y": 72.52
+                    "x": 55.25,
+                    "y": 105.80
                 },
                 {
                     "name": "sello",
-                    "x": 126.43,
-                    "y": 73.37
+                    "x": 124.32,
+                    "y": 105.80
                 },
                 {
                     "name": "cliente",
-                    "x": 97.0,
-                    "y": 77.93
+                    "x": 73.15,
+                    "y": 114.27
                 },
                 {
                     "name": "linea_transporte",
-                    "x": 91.2,
-                    "y": 91.61
+                    "x": 92.30,
+                    "y": 134.05
                 },
                 {
                     "name": "destino",
-                    "x": 92.44,
-                    "y": 121.87
+                    "x": 76.29,
+                    "y": 183.96
                 },
                 {
                     "name": "direccion",
-                    "x": 88.71,
-                    "y": 127.26
+                    "x": 74.40,
+                    "y": 192.75
                 },
                 {
                     "name": "pedimento",
-                    "x": 97.42,
-                    "y": 139.29
+                    "x": 76.60,
+                    "y": 212.53
                 },
                 {
                     "name": "aa_mx",
-                    "x": 91.2,
-                    "y": 146.33
+                    "x": 74.72,
+                    "y": 222.89
                 },
                 {
                     "name": "autoriza",
                     "x": 89.96,
                     "y": 152.14
-                },
-                {
-                    "name": "observaciones",
-                    "x": 91.61,
-                    "y": 163.74
                 }
             ]
         },
@@ -355,13 +334,13 @@
             "fields": [
                 {
                     "name": "fecha",
-                    "x": 124.94,
-                    "y": 73.77
+                    "x": 152.37,
+                    "y": 74.72
                 },
                 {
                     "name": "guia",
                     "x": 47.4,
-                    "y": 98.57
+                    "y": 99.52
                 },
                 {
                     "name": "factura",
@@ -370,12 +349,12 @@
                 },
                 {
                     "name": "talon",
-                    "x": 72.2,
+                    "x": 95.12,
                     "y": 109.56
                 },
                 {
                     "name": "cliente",
-                    "x": 55.57,
+                    "x": 127.89,
                     "y": 119.92
                 },
                 {
@@ -395,8 +374,8 @@
                 },
                 {
                     "name": "autoriza",
-                    "x": 71.58,
-                    "y": 189.61
+                    "x": 31.73,
+                    "y": 191.18
                 }
             ]
         },
@@ -451,143 +430,59 @@
             "fields": [
                 {
                     "name": "referencia",
-                    "label": "Referencia",
-                    "page": 0,
-                    "x": 60,
-                    "y": 191,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Referencia"
                 },
                 {
                     "name": "placa",
-                    "label": "Placa",
-                    "page": 0,
-                    "x": 67.1,
-                    "y": 179.0,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Placa"
                 },
                 {
                     "name": "guia",
-                    "label": "Guia",
-                    "page": 0,
-                    "x": 104.5,
-                    "y": 156.7,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Guia"
                 },
                 {
                     "name": "talon",
-                    "label": "Talon",
-                    "page": 0,
-                    "x": 104.5,
-                    "y": 156.7,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Talon"
                 },
                 {
                     "name": "bultos",
-                    "label": "Bultos",
-                    "page": 0,
-                    "x": 65.91,
-                    "y": 149,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 10
+                    "label": "Bultos"
                 },
                 {
                     "name": "peso",
-                    "label": "Peso",
-                    "page": 0,
-                    "x": 187,
-                    "y": 143,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 9
+                    "label": "Peso"
                 },
                 {
                     "name": "pedimento",
-                    "label": "Pediemento",
-                    "page": 0,
-                    "x": 104.5,
-                    "y": 156.7,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Pedimento"
                 },
                 {
                     "name": "cliente",
-                    "label": "Cliente",
-                    "page": 0,
-                    "x": 60,
-                    "y": 191,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Cliente"
                 },
                 {
                     "name": "aa_mx",
-                    "label": "Agente Aduanal Mexicano",
-                    "page": 0,
-                    "x": 0,
-                    "y": 0,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Agente Aduanal Mexicano"
                 },
                 {
                     "name": "linea_transporte",
-                    "label": "Linea Transfer",
-                    "page": 0,
-                    "x": 59.3,
-                    "y": 86.4,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Linea Transfer"
                 },
                 {
                     "name": "origen",
-                    "label": "Origen",
-                    "page": 0,
-                    "x": 70.4,
-                    "y": 122.1,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Origen"
                 },
                 {
                     "name": "destino",
-                    "label": "Destino",
-                    "page": 0,
-                    "x": 59.1,
-                    "y": 98.4,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Destino"
                 },
                 {
                     "name": "fecha",
-                    "label": "Fecha",
-                    "page": 0,
-                    "x": 0,
-                    "y": 0,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Fecha"
                 },
                 {
                     "name": "autoriza",
-                    "label": "Autoriza",
-                    "page": 0,
-                    "x": 0,
-                    "y": 0,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Autoriza"
                 }
             ]
         },
@@ -595,143 +490,60 @@
             "fields": [
                 {
                     "name": "referencia",
-                    "label": "Referencia",
-                    "page": 0,
-                    "x": 60,
-                    "y": 191,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Referencia"
                 },
                 {
                     "name": "caja",
-                    "label": "Caja",
-                    "page": 0,
-                    "x": 67.1,
-                    "y": 179.0,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Caja"
                 },
+                {"name":"caja_dueno","label":"Caja Dueño"},
                 {
                     "name": "placas",
-                    "label": "Placas",
-                    "page": 0,
-                    "x": 59.3,
-                    "y": 168.5,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Placas"
                 },
                 {
                     "name": "sello",
-                    "label": "Sello",
-                    "page": 0,
-                    "x": 104.5,
-                    "y": 156.7,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Sello"
                 },
                 {
                     "name": "bultos",
-                    "label": "Bultos",
-                    "page": 0,
-                    "x": 65.91,
-                    "y": 149,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 10
+                    "label": "Bultos"
                 },
                 {
                     "name": "peso",
-                    "label": "Peso",
-                    "page": 0,
-                    "x": 187,
-                    "y": 143,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 9
+                    "label": "Peso"
                 },
                 {
                     "name": "pedimento",
-                    "label": "Pedimento",
-                    "page": 0,
-                    "x": 0,
-                    "y": 0,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Pedimento"
                 },
                 {
                     "name": "cliente",
-                    "label": "Cliente",
-                    "page": 0,
-                    "x": 60,
-                    "y": 191,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Cliente"
                 },
                 {
                     "name": "aa_mx",
-                    "label": "Agente Aduanal Mexicano",
-                    "page": 0,
-                    "x": 0,
-                    "y": 0,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Agente Aduanal Mexicano"
                 },
                 {
                     "name": "linea_transporte",
-                    "label": "Linea Transfer",
-                    "page": 0,
-                    "x": 59.3,
-                    "y": 86.4,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Linea Transfer"
                 },
                 {
                     "name": "origen",
-                    "label": "Origen",
-                    "page": 0,
-                    "x": 70.4,
-                    "y": 122.1,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Origen"
                 },
                 {
                     "name": "destino",
-                    "label": "Destino",
-                    "page": 0,
-                    "x": 59.1,
-                    "y": 98.4,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Destino"
                 },
                 {
                     "name": "fecha",
-                    "label": "Fecha",
-                    "page": 0,
-                    "x": 0,
-                    "y": 0,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Fecha"
                 },
                 {
                     "name": "autoriza",
-                    "label": "Autoriza",
-                    "page": 0,
-                    "x": 0,
-                    "y": 0,
-                    "unit": "mm",
-                    "font": "Helvetica",
-                    "size": 20
+                    "label": "Autoriza"
                 }
             ]
         }
@@ -746,8 +558,8 @@
             "direccion": "Direccion GTR"
         },
         {
-            "nombre_patio": "GTR",
-            "direccion": "Libramiento Mex II Km 6.780 interior, Rancho Maria Luisa, 88174"
+            "nombre_patio": "gns",
+            "direccion": "Expeditors Bodega 1 GNS doc:43-63 8510 Bob Bullock Loop, Laredo, Tx 78045, United States"
         }
     ],
     "linea_transporte": [
@@ -763,5 +575,6 @@
             "name": "GALA-SCL, S.A. de C.V.",
             "scac": "GALA"
         }
+
     ]
 }
