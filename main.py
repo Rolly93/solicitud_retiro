@@ -35,6 +35,9 @@ class MiApp(QMainWindow):
         self.pdf_service = PDFService()
         self.data_managet = DataManager()
         
+        
+        self._doc = self.pdf_service.doc
+        
         self.total_paginas = 0
         self.page_actual = 0
 
@@ -48,7 +51,6 @@ class MiApp(QMainWindow):
         self._direccion_patio = ""
         self._scac = ""
         self._name_transfer = ""
-        self._doc = None
         self.lista_solicitudes = self.data_managet.list_solicitud
 
         self.dic_solicitudes = self.data_managet._dict_solicitudes()
@@ -56,12 +58,16 @@ class MiApp(QMainWindow):
         self.i_values_extra={}
         
 
-        
         self.ui = Ui_MainWindow()
+        
+        
         self.ui.setupUi(self)
         self.scene = QGraphicsScene(self)
         self.ui.display_pdf.setScene(self.scene)
 
+        layout = self.ui.horizontalLayout_4
+        layout.setStretch(0, 0)
+        layout.setStretch(1, 1)
         self.combos_box = [self.ui.cmbox_destino, self.ui.cmbox_origen, self.ui.cmbox_formato, self.ui.cmbox_tipo_unidad , self.ui.cobox_aduana]
         
         self.form_manager =FormManager(self, self.ui.frame_5, self.data_managet)
@@ -109,12 +115,12 @@ class MiApp(QMainWindow):
         self.ui.cobox_aduana.addItem("800")
 
         self.ui.input_Referencia.returnPressed.connect(self.focusNextChild)
-        
+        self._tipo_unidad = self.ui.cmbox_tipo_unidad.currentText()
 
         if self.ui.cmbox_tipo_unidad or self.dic_solicitudes:
             QtCore.QTimer.singleShot(0, self.preparar_campos_por_unidad)
             QtCore.QTimer.singleShot(0, self.cambio_plantilla)
-            
+
         
     def handle_error(func):
         def wrapper(self,*args,**kwargs):
@@ -147,8 +153,8 @@ class MiApp(QMainWindow):
     
     def return_values_dynamic(self ,dynamic_values ):
         data_input = {}
+        
         for nombre_campo , wdget in dynamic_values:
-
             if not isinstance(wdget , QComboBox):
                 data_input[nombre_campo]= wdget.text()
             else:
@@ -156,37 +162,43 @@ class MiApp(QMainWindow):
         return data_input
 
     def recolectar_formularios(self):
+        self._destino = self.ui.cmbox_destino.currentText() 
+        d_estado , d_calle  = self.data_managet.obtener_direccion(self._destino)
+        self._tipo_unidad = self.ui.cmbox_tipo_unidad.currentText()
+        self._origen = self.ui.cmbox_origen.currentText()
+        self._aduana = self.ui.cobox_aduana.currentText() 
+        o_estado , o_calle  = self.data_managet.obtener_direccion(self._origen)
         
-        
+
         datos = {
-        "referencia" :self.ui.input_Referencia.text(),
-        "aduana" :self.ui.cobox_aduana.currentText(),
-        "tipo_solicitud" :self.ui.cmbox_formato.currentText(),
-        "tipo_unidad" :self.ui.cmbox_tipo_unidad.currentText(),
-        "origen" :self.ui.cmbox_origen.currentText(),
-        "destino" :self.ui.cmbox_destino.currentText()
+        "referencia" :self._referencia,
+        "aduana" :self._aduana,
+        "tipo_solicitud" :self._tipo_solicitud,
+        "tipo_unidad" :self._tipo_unidad,
+        "origen" :self._origen,
+        "destino" :self._destino,
+        "direccion" : f"{d_estado} \n {d_calle}",
+        "direccion_o":f"{o_estado} \n {o_calle}"
         }
         datos.update(self.return_values_dynamic(self.inputs_extra.items()))
-        
         return datos
-        
+    
+    
+    @handle_error
     def previsualizar_pdf(self):
+        self._referencia =self.ui.input_Referencia.text()
 
-        referencia = self.ui.input_Referencia.text()
-        if not self._isvalid_reference(referencia):
+        
+        if not self.data_managet.validar_Referencia(self._referencia):
             return
 
+        
         datos =self.recolectar_formularios()
 
         self.pdf_service.escribir_campos(datos , self.data_managet.get_coord)
         self.mostrar_pagina()        
 
         
-    @handle_error
-    def _isvalid_reference(self,referencia):
-        
-        self.data_managet.validar_Referencia(referencia)
-        self.show_message("Exito","Referencia Correcta",f"Referencia:\n {referencia} correcta" , "info")    
 
 
     @handle_error
@@ -210,17 +222,30 @@ class MiApp(QMainWindow):
 
         if dialog_adress.exec():
             nombre_patio = dialog_adress.ui.name_yard.text()
-            address_patio = dialog_adress.ui.address_yard.text()    
+            calle = dialog_adress.ui.input_calle.text()
+            estado = dialog_adress.ui.input_municipio.text()
+             
             
-            self.data_managet.insert_new_address(nombre_patio,address_patio)
+            self.data_managet.insert_new_address(nombre_patio,calle,estado)
         self.show_message("Exito","Patio Guardado",f"El Patio {nombre_patio} se registro correctamente","info")
 
     def cambio_plantilla(self ):
         
-        nombre_solicitud = self.ui.cmbox_formato.currentText()
+        
+        
+                        
+        self._tipo_solicitud  = self.ui.cmbox_formato.currentText()
+        
+        wdget = dict(self.inputs_extra.items())
+        if "caja_dueno" in wdget :
+            if not self._tipo_solicitud.lower() == "gtr solicitud retiro":
+                wdget["caja_dueno"].setEnabled(False)
+            else:
+                wdget["caja_dueno"].setEnabled(True)            
+            
         
         try:
-            pdf_route = self.data_managet.obtener_ruta_solicitud(nombre_solicitud)
+            pdf_route = self.data_managet.obtener_ruta_solicitud(self._tipo_solicitud)
             self.total_paginas = self.pdf_service.cargar_documento(pdf_route)
             self.page_actual = 0
             self.mostrar_pagina()
@@ -245,6 +270,7 @@ class MiApp(QMainWindow):
 
             
     def restablecer_order_tab(self):
+        self._tipo_solicitud = self.ui.cmbox_formato.currentText()
         order_widgets = [
             self.ui.cobox_aduana,
             self.ui.cmbox_formato,
@@ -277,26 +303,24 @@ class MiApp(QMainWindow):
             
 
     def preparar_campos_por_unidad(self):
-            tipo = self.ui.cmbox_tipo_unidad.currentText() 
-            
-
-            if tipo :
-                config_unidad = self.data_managet.request_input_type_unit(tipo_unidad=tipo)
+            self._tipo_unidad = self.ui.cmbox_tipo_unidad.currentText()
+            if self._tipo_unidad :
+                config_unidad = self.data_managet.request_input_type_unit(tipo_unidad=self._tipo_unidad)
 
                 self.inputs_extra = self.form_manager.generar_formulario(config_unidad)
                 self.ui.verticalLayout_7 = self.ui.frame_5.layout()
                 self.restablecer_order_tab()
                 
+
                 
                 
     def guardar(self):
-        guardar = "./test.pdf"
 
-        self._doc.save(guardar,garbage=4 , deflate=True)
+        self.pdf_service.guardar_como(self._referencia)
 
 
     def on_pdf_click(self, x_pix, y_pix):
-        if not self._doc: return
+        if not self.pdf_service.doc : return
 
 
         pixmap_rect = self.pdf_item.pixmap().rect()
@@ -319,6 +343,7 @@ class MiApp(QMainWindow):
 
         QApplication.clipboard().setText(f'"x": {x_mm:.2f}, "y": {y_mm:.2f}')
         self.ui.statusbar.showMessage(f"Copiado: X={x_mm:.2f}, Y={y_mm:.2f}")
+        
     def show_message(self,title,header,txt,type="error"):
         """fabrica de mensajes centralizado"""
         
