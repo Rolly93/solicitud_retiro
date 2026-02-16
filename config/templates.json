@@ -7,20 +7,31 @@
                     "name": "fecha",
                     "x": 169.52,
                     "y": 19.46
-                },{
-                     "name": "referencia",
-                     "x":124.65,
-                     "y":26.83
                 },
-                {"name":"aduana","x":119.29,"y":30.14},
                 {
-                    "name": "bultos", "x":118.11 ,"y":43.9
+                    "name": "referencia",
+                    "x": 124.65,
+                    "y": 26.83
                 },
-                {"name": "peso", "x":115.82,"y":48.0},
                 {
-                        "name": "origen",
-                        "x":120.4,
-                        "y":34.03
+                    "name": "aduana",
+                    "x": 119.29,
+                    "y": 30.14
+                },
+                {
+                    "name": "bultos",
+                    "x": 118.11,
+                    "y": 43.9
+                },
+                {
+                    "name": "peso",
+                    "x": 115.82,
+                    "y": 48.0
+                },
+                {
+                    "name": "origen",
+                    "x": 120.4,
+                    "y": 34.03
                 },
                 {
                     "name": "destino",
@@ -31,10 +42,17 @@
                     "name": "caja",
                     "x": 129.69,
                     "y": 86.74
-                },{
-                    "name": "placas","x":131.19,"y":91.28
-                },{"name": "placa","x":172.74,"y":86.70},
-                
+                },
+                {
+                    "name": "placas",
+                    "x": 131.19,
+                    "y": 91.28
+                },
+                {
+                    "name": "placa",
+                    "x": 172.74,
+                    "y": 86.7
+                },
                 {
                     "name": "pedimento",
                     "x": 19.46,
@@ -59,20 +77,63 @@
         },
         "delivery-order": {
             "filename": "delivery-order.pdf",
-            "fields": [{
-                "name": "referencia", "x":28.57 , "y": 29.82
-            },
-            {
-                "name":"origen","x":112.07,"y":39.22
-            },
-            {"name": "destino", "x": 10.07, "y": 40.50},
-            {"name":"fecha","x":176.20,"y":30.88},
-            {"name":"bultos","x":10.36,"y":119.92},
-            {"name":"caja","x":61.22,"y":133.11},
-            {"name":"sello","x":57.76,"y":137.82},
-            {"name":"peso","x":164.50,"y":130.28},
-            {"name":"placa","x":61.22,"y":133.11}
-        ]
+            "fields": [
+                {
+                    "name": "referencia",
+                    "x": 28.57,
+                    "y": 29.82
+                },
+                {
+                    "name": "origen",
+                    "x": 112.07,
+                    "y": 40.24
+                },
+                {
+                    "name": "direccion_o",
+                    "x": 112.07,
+                    "y": 48.42
+                },
+                {
+                    "name": "destino",
+                    "x": 9.49,
+                    "y": 40.24
+                },
+                {
+                    "name": "direccion",
+                    "x": 9.49,
+                    "y": 48.42
+                },
+                {
+                    "name": "fecha",
+                    "x": 176.2,
+                    "y": 30.88
+                },
+                {
+                    "name": "bultos",
+                    "x": 10.36,
+                    "y": 119.92
+                },
+                {
+                    "name": "caja",
+                    "x": 61.22,
+                    "y": 133.11
+                },
+                {
+                    "name": "sello",
+                    "x": 57.76,
+                    "y": 137.82
+                },
+                {
+                    "name": "peso",
+                    "x": 164.5,
+                    "y": 130.28
+                },
+                {
+                    "name": "placa",
+                    "x": 61.22,
+                    "y": 133.11
+                }
+            ]
         },
         "cfi-solicitud-retiro": {
             "filename": "cfi-solicitud-retiro.pdf",
@@ -185,7 +246,7 @@
                 {
                     "name": "caja",
                     "x": 57.45,
-                    "y": 92.30
+                    "y": 92.3
                 },
                 {
                     "name": "caja_dueno",
@@ -195,12 +256,12 @@
                 {
                     "name": "placas",
                     "x": 55.25,
-                    "y": 105.80
+                    "y": 105.8
                 },
                 {
                     "name": "sello",
                     "x": 124.32,
-                    "y": 105.80
+                    "y": 105.8
                 },
                 {
                     "name": "cliente",
@@ -209,7 +270,7 @@
                 },
                 {
                     "name": "linea_transporte",
-                    "x": 92.30,
+                    "x": 92.3,
                     "y": 134.05
                 },
                 {
@@ -219,12 +280,12 @@
                 },
                 {
                     "name": "direccion",
-                    "x": 74.40,
-                    "y": 192.75
+                    "x": 67.4,
+                    "y": 189.75
                 },
                 {
                     "name": "pedimento",
-                    "x": 76.60,
+                    "x": 76.6,
                     "y": 212.53
                 },
                 {
@@ -496,7 +557,10 @@
                     "name": "caja",
                     "label": "Caja"
                 },
-                {"name":"caja_dueno","label":"Caja Dueño"},
+                {
+                    "name": "caja_dueno",
+                    "label": "Caja Dueño"
+                },
                 {
                     "name": "placas",
                     "label": "Placas"
@@ -551,15 +615,43 @@
     "patios": [
         {
             "nombre_patio": "bodega lrd",
-            "direccion": "Direccion Bodega LRD"
+            "calle": "Expeditors Bodega 2 GNS doc:43-63 8510 Bob Bullock Loop",
+            "estado": "Laredo, Tx 78045, United States"
         },
         {
             "nombre_patio": "gtr",
-            "direccion": "Direccion GTR"
+            "calle": "Direccion GTR",
+            "estado": "Nuevo Laredo , Tamaulipas"
         },
         {
             "nombre_patio": "gns",
-            "direccion": "Expeditors Bodega 1 GNS doc:43-63 8510 Bob Bullock Loop, Laredo, Tx 78045, United States"
+            "calle": "Expeditors Bodega 1 GNS doc:43-63 8510 Bob Bullock Loop",
+            "estado": "Laredo, Tx 78045, United States"
+        },
+        {
+            "nombre_patio": "Landstar Transportation Logistic",
+            "calle": "601 Vidal Cantu Rd",
+            "estado": "Laredo,Tx 78045, United States"
+        },
+        {
+            "nombre_patio": "SOUTHEASTERN FREIGHT LINES\n",
+            "calle": "WORLD TRADE CENTER LOOP 1657 78045",
+            "estado": "LAREDO,TEXAS,ESTADOS UNIDOS DE AMERICA"
+        },
+        {
+            "nombre_patio": "Grupo Camionera Regional S.A de C.V",
+            "calle": "Libramiento Mexico 2. KM 9.650, 88000",
+            "estado": "Nuevo Laredo. Tams\n"
+        },
+        {
+            "nombre_patio": "Transportes Elola S.A de C.V",
+            "calle": "Lib Mex II Kilometro 28.790,Rancho Maria Luisa, 88295",
+            "estado": "Nuevo Laredo, Tamps."
+        },
+        {
+            "nombre_patio": "GONZALEZ TRUCKING SA DE CV",
+            "calle": "Carretera MEX II KM 6.78 Rancho María Luisa 88176\n",
+            "estado": "NUEVO LAREDO,TAMAULIPAS,MEXICO"
         }
     ],
     "linea_transporte": [
@@ -575,6 +667,5 @@
             "name": "GALA-SCL, S.A. de C.V.",
             "scac": "GALA"
         }
-
     ]
 }
