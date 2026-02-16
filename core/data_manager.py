@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-#from core.data import cargar_todo , update_file
-from data import cargar_todo , update_file
+#from data import cargar_todo , update_file
+from core.data import cargar_todo , update_file
 class DataManager:
     def __init__(self):
         self.base_dir = Path(__file__).parent.parent
@@ -49,30 +49,33 @@ class DataManager:
                   self._all_data.get("patios",{})}
         return sorted(dict_yard)
 
-    def obtener_direccion (self, patio: str) ->str :
+    def obtener_direccion (self, patio: str) ->list[str]:
+        """"funcion para obtener el estado y direccion
+        str: estado
+        str: municipio"""
+        
         direc = self._dict_patios()
         yard = patio.upper()
         direccion = direc[yard]
-        print(len(direccion))
-        i=0
-        while i < len(direccion):
-            if not direccion[i].isspace():
-                print(direccion[i])
-            i += 1
-                
+        split_address = direccion.split("+")
+        estado = split_address[1]
+        direccion = split_address[0]
         
-        
-        
-
-
-        
-        return direccion[:37]
+        format =""
+        for i ,char in enumerate(direccion):
+            if i ==27:
+                print(i)
+                format = f"{format+ char}\n"
+            else:   
+                format = format + char
+        print(format)
+        return [estado , format]
     
 
     def _dict_patios(self)->dict[str:str]:
         
         dict_yard= {
-            nombre.get("nombre_patio").upper(): nombre.get("direccion").upper()
+            nombre.get("nombre_patio").upper(): f"{nombre.get("calle").upper()} + {nombre.get("estado").upper()}" 
             
                   for nombre in 
                   self._all_data.get("patios")}       
@@ -150,20 +153,21 @@ class DataManager:
             raise ValueError (f"Referencia: \n{ref} es invalida")
         return True
         
-    def insert_new_address (sefl,name:str,address:str)->None:
+    def insert_new_address (sefl,name:str,calle:str,estado:str)->None:
         
         if "patios" not in sefl._all_data:
             sefl._all_data["patios"] = []
         if sefl.does_exist(name
-                           ,address
+                           ,calle
                            ,"patios",
                            "nombre_patio",
-                           "direccion"):
+                           "calle",):
             raise ValueError  (f"El Patio {name} ya existe en el registro")
         
         new_yard ={
             "nombre_patio":name,
-            "direccion":address
+            "calle":calle,
+            "estado":estado
         }
         sefl._all_data["patios"].append(new_yard)
         
@@ -187,7 +191,7 @@ class DataManager:
         
         update_file(self._all_data)
     
-    def does_exist(self, key:str , value:str , main_key:str , dict_key:str , dict_value:str):
+    def does_exist(self, key:str , value:str , main_key:str , dict_key:str , dict_value:str)-> bool:
         
         is_duplicate1 = any(
             item[f"{dict_key}"].lower() == key.lower().strip()
@@ -201,7 +205,8 @@ class DataManager:
             return True
         return False
     
-    
 data = DataManager()
-print(data.obtener_direccion("gns"))
+estado , direccion = data.obtener_direccion("bodega lrd")
+print(len(direccion))
+print(direccion)
 
