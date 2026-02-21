@@ -15,6 +15,8 @@ from PySide6.QtWidgets import( QMessageBox ,
                               QGraphicsScene ,
                               QGraphicsPixmapItem,
 )
+import asyncio
+from core.edoc_command import EdocCommand
 class PDFGraphicsItem(QGraphicsPixmapItem):
     # Definimos una señal personalizada (necesita heredar de QObject para señales, 
     # pero para simplicidad usaremos un callback)
@@ -34,7 +36,7 @@ class MiApp(QMainWindow):
         super().__init__()
         self.pdf_service = PDFService()
         self.data_managet = DataManager()
-        
+        self.edoc = EdocCommand()
         
         self._doc = self.pdf_service.doc
         
@@ -42,7 +44,7 @@ class MiApp(QMainWindow):
         self.page_actual = 0
 
         self._aduana = ""
-        self._tipo_solicitud = ""
+        self._tipo_solicitud = []
         self._tipo_unidad = ""
         self._origen = ""
         self._destino = ""
@@ -91,7 +93,7 @@ class MiApp(QMainWindow):
         #funcionamento del los toolbox
         self.ui.tbox_agregar_direccion.clicked.connect(self.popout_addres_form)
         self.ui.tbox_agregar_direccion.setFocusPolicy(Qt.TabFocus)
-       # self.ui.tbox_agregar_direccion.installEventFilter(self)
+       
         
         self.ui.tbox_agregar_linea_transfer.clicked.connect(self.popout_tranferForm)
         self.ui.tbox_agregar_linea_transfer.setFocusPolicy(Qt.TabFocus)
@@ -110,11 +112,18 @@ class MiApp(QMainWindow):
        
         self.ui.btn_previsuzalizar.clicked.connect(self.previsualizar_pdf)
         self.ui.display_pdf
+        
+        self.ui.btn_next.clicked.connect(self.nextpage)
+        self.ui.btn_previews.clicked.connect(self.previews_page)
 
         self.ui.cobox_aduana.addItem("240")
         self.ui.cobox_aduana.addItem("800")
 
+        #inputs
         self.ui.input_Referencia.returnPressed.connect(self.focusNextChild)
+        self.ui.input_Referencia.setPlaceholderText("Ingrese referencia 92B / 82B")
+        self.ui.input_Referencia.setMaxLength(10)
+        
         self._tipo_unidad = self.ui.cmbox_tipo_unidad.currentText()
 
         if self.ui.cmbox_tipo_unidad or self.dic_solicitudes:
@@ -178,7 +187,8 @@ class MiApp(QMainWindow):
         "origen" :self._origen,
         "destino" :self._destino,
         "direccion" : f"{d_estado} \n {d_calle}",
-        "direccion_o":f"{o_estado} \n {o_calle}"
+        "direccion_o":f"{o_estado} \n {o_calle}",
+        "gtr_entrega": f"{d_calle} {d_estado}"
         }
         datos.update(self.return_values_dynamic(self.inputs_extra.items()))
         return datos
@@ -194,8 +204,9 @@ class MiApp(QMainWindow):
 
         
         datos =self.recolectar_formularios()
-
-        self.pdf_service.escribir_campos(datos , self.data_managet.get_coord)
+        solicitud_actual = self._tipo_solicitud[self.page_actual]
+        
+        self.pdf_service.escribir_campos(datos , self.data_managet.get_coord , solicitud_actual)
         self.mostrar_pagina()        
 
         
@@ -231,33 +242,62 @@ class MiApp(QMainWindow):
 
     def cambio_plantilla(self ):
         
-        
-        
-                        
-        self._tipo_solicitud  = self.ui.cmbox_formato.currentText()
+        self._tipo_solicitud.clear()
+        self._tipo_solicitud.append( self.ui.cmbox_formato.currentText())
         
         wdget = dict(self.inputs_extra.items())
         if "caja_dueno" in wdget :
-            if not self._tipo_solicitud.lower() == "gtr solicitud retiro":
+            if not self._tipo_solicitud[0].lower() == "gtr solicitud retiro":
                 wdget["caja_dueno"].setEnabled(False)
             else:
                 wdget["caja_dueno"].setEnabled(True)            
             
         
         try:
-            pdf_route = self.data_managet.obtener_ruta_solicitud(self._tipo_solicitud)
-            self.total_paginas = self.pdf_service.cargar_documento(pdf_route)
-            self.page_actual = 0
+            
+            def_va = ["CHECKLIST" ,"DELIVERY ORDER"]
+            #CHECKLIST DELIVERY ORDER
+
+            if self._tipo_solicitud[0] not in def_va :
+           
+                self._tipo_solicitud.append("CHECKLIST")
+                self._tipo_solicitud.append("DELIVERY ORDER")
+              
+            pdf_route = self.data_managet.obtener_ruta_solicitud(self._tipo_solicitud[self.page_actual])
+            self.pdf_service.cargar_documento(pdf_route)
+            self.total_paginas = len(self._tipo_solicitud)
+  
+            
             self.mostrar_pagina()
+            
             
         except Exception as e:
             print(f"Error al cambiar de plantilla: \t {e}")
 
+    def nextpage(self):
+        if self.page_actual < self.total_paginas - 1:
+            self.page_actual += 1
+            print(self._tipo_solicitud[self.page_actual])
+            pdf_route = self.data_managet.obtener_ruta_solicitud(self._tipo_solicitud[self.page_actual])
+            self.pdf_service.cargar_documento(pdf_route)
+            self.mostrar_pagina()
+    
+    def previews_page(self):
+            # Validar que no sea menor a 0
+            if self.page_actual > 0:
+                self.page_actual -= 1
+                # Cargar el documento previo
+                print(self._tipo_solicitud[self.page_actual])
+                pdf_route = self.data_managet.obtener_ruta_solicitud(self._tipo_solicitud[self.page_actual])
+                self.pdf_service.cargar_documento(pdf_route)
+                self.mostrar_pagina()
+       
         
     def mostrar_pagina(self):
         
+        pix = self.pdf_service.obtener_pixmap(0)
 
-        pix = self.pdf_service.obtener_pixmap(self.page_actual)
+        #pix = self.pdf_service.obtener_pixmap(self.page_actual)
         
         if pix:
             img = QImage(pix.samples,pix.width , pix.height,pix.stride , QImage.Format_RGB888)
@@ -270,7 +310,7 @@ class MiApp(QMainWindow):
 
             
     def restablecer_order_tab(self):
-        self._tipo_solicitud = self.ui.cmbox_formato.currentText()
+        #self._tipo_solicitud = self.ui.cmbox_formato.currentText()
         order_widgets = [
             self.ui.cobox_aduana,
             self.ui.cmbox_formato,
@@ -313,11 +353,54 @@ class MiApp(QMainWindow):
                 
 
                 
-                
+    @handle_error
     def guardar(self):
+        
+        async def procesar_edoc():
+            for route in file_route:
+                await self.edoc.command(route)
+                await asyncio.sleep(1)
+                
+        datos = self.recolectar_formularios()
+        file_route =[]
+        file_route.clear()
+        if not self._referencia:
+            self.show_message("Error", "Falta Referencia", "Debes ingresar una referencia para guardar.", "warning")
+            return
+        
+            
+        print(self._tipo_solicitud)
+        try:
+            for platilla in self._tipo_solicitud:
+                ruta_template = self.data_managet.obtener_ruta_solicitud(platilla)
+                
+                self.pdf_service.cargar_documento(ruta_template)
 
-        self.pdf_service.guardar_como(self._referencia)
 
+                match platilla.upper():
+                    case "CHECKLIST":
+                        filename = f"check_copy_{self._referencia}.pdf"
+                    case "DELIVERY ORDER":
+                        filename = f"delivery_order_{self._referencia}.pdf"
+                    case _:
+                        filename = f"solicitud_retiro_{self._referencia}.pdf"
+                
+                self.pdf_service.escribir_campos(datos, self.data_managet.get_coord, platilla)
+                file_route.append(self.pdf_service.guardar_como(filename))
+                
+                self.pdf_service.cerrar()
+                
+            
+            self.show_message("Éxito", "Proceso completado", 
+                            f"Se generaron {len(self._tipo_solicitud)} archivos en /documents para la referencia {self._referencia}", "info")
+            
+        except Exception as e :
+            self.show_message("Error", f"No se pudo generar {filename}", str(e), "error")
+            
+        asyncio.run(procesar_edoc())
+        self.pdf_service.cargar_documento(
+            self.data_managet.obtener_ruta_solicitud(
+                self._tipo_solicitud[0]))
 
     def on_pdf_click(self, x_pix, y_pix):
         if not self.pdf_service.doc : return
