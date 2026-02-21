@@ -1,6 +1,6 @@
+from PySide6.QtWidgets import QDialog
 from ui.adress_form_ui import Ui_Dialog as Ui_AdressForm
 from ui.transfer_form_ui import Ui_Dialog as Ui_TransferForm   
-from PySide6.QtWidgets import QDialog
 
 class BasePopout(QDialog):
     def __init__(self,Ui_class:object , parent=None):
@@ -9,7 +9,7 @@ class BasePopout(QDialog):
         self.ui= Ui_class()
         self.ui.setupUi(self)
     def guardar_datos(self):
-        print("ceerado formulario")
+        print("cerrando formulario")
         self.accept()
 
 class AdressForm(BasePopout):
