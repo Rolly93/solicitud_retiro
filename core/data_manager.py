@@ -61,14 +61,14 @@ class DataManager:
         estado = split_address[1]
         direccion = split_address[0]
         
+        
         format =""
         for i ,char in enumerate(direccion):
             if i ==27:
-                print(i)
                 format = f"{format+ char}\n"
             else:   
                 format = format + char
-        print(format)
+
         return [estado , format]
     
 
@@ -205,8 +205,6 @@ class DataManager:
             return True
         return False
     
-data = DataManager()
-estado , direccion = data.obtener_direccion("bodega lrd")
-print(len(direccion))
-print(direccion)
+
+
 
