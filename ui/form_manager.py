@@ -1,6 +1,5 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLineEdit, QComboBox, QLabel, QGridLayout, QWidget
-
 class FormManager:
     def __init__(self, parent_window, container_frame, data_manager):
         self.window = parent_window  # Para focusNextChild y setTabOrder
@@ -47,6 +46,11 @@ class FormManager:
             else:
                 widget = QLineEdit()
                 widget.returnPressed.connect(self.window.focusNextChild)
+                
+            if field["name"] == "fecha":
+                widget.setInputMask("99/99/9999;_")
+                widget.setPlaceholderText("DD/MM/YYYY")
+                widget.setMaxLength(10)
 
             widget.setObjectName(f"input_{field['name']}")
             label = QLabel(field["label"])

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>389</width>
     <height>300</height>
    </rect>
   </property>
@@ -24,24 +24,38 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_5">
       <item>
-       <widget class="QLabel" name="lbl_direccion_name">
+       <widget class="QLabel" name="lbl_name_yard">
         <property name="text">
          <string>Nombre del Patio</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="name_yard"/>
-      </item>
-      <item>
-       <widget class="QLabel" name="lbl_direccion">
-        <property name="text">
-         <string>Direccion</string>
+       <widget class="QLineEdit" name="name_yard">
+        <property name="maxLength">
+         <number>32767</number>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="address_yard"/>
+       <widget class="QLabel" name="lbl_calle">
+        <property name="text">
+         <string>Calle</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="input_calle"/>
+      </item>
+      <item>
+       <widget class="QLabel" name="lbl_municipio">
+        <property name="text">
+         <string>Estado / Municipio</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="input_municipio"/>
       </item>
       <item>
        <widget class="QPushButton" name="btn_add_nAddress">
