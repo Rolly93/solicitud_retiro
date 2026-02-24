@@ -84,7 +84,7 @@ class PDFService:
         
         base =Path( "./documents")
         ruta_destino =base  / ruta_destino
-        
+        print(ruta_destino)
         ruta_destino.parent.mkdir(parents=True, exist_ok=True)
         
         if self.doc:
