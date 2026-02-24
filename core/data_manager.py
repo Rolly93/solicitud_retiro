@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-#from data import cargar_todo , update_file
 from core.data import cargar_todo , update_file
 class DataManager:
     def __init__(self):
@@ -146,12 +145,13 @@ class DataManager:
         return [None,None]
     
     def validar_Referencia(self,referecia:str) ->bool:
+        is_valid = False
         count = len(referecia)
-        ref= referecia.upper()
-        count == 10 and (ref.startswith("92B") or ref.startswith("82B"))
-        if not count:
-            raise ValueError (f"Referencia: \n{ref} es invalida")
-        return True
+        ref= referecia.upper().replace("_","").strip()
+        if count == 10 and (ref.startswith("92B") or ref.startswith("82B")):
+            is_valid = True
+        
+        return is_valid
         
     def insert_new_address (sefl,name:str,calle:str,estado:str)->None:
         
