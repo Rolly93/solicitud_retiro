@@ -17,6 +17,7 @@ from PySide6.QtWidgets import( QMessageBox ,
 )
 import asyncio
 from core.edoc_command import EdocCommand
+
 class PDFGraphicsItem(QGraphicsPixmapItem):
     # Definimos una señal personalizada (necesita heredar de QObject para señales, 
     # pero para simplicidad usaremos un callback)
@@ -37,7 +38,6 @@ class MiApp(QMainWindow):
         self.pdf_service = PDFService()
         self.data_managet = DataManager()
         self.edoc = EdocCommand()
-        
         self._doc = self.pdf_service.doc
         
         self.total_paginas = 0
@@ -52,17 +52,17 @@ class MiApp(QMainWindow):
         self._nombre_patio = ""
         self._direccion_patio = ""
         self._scac = ""
-        self._name_transfer = ""
         self.lista_solicitudes = self.data_managet.list_solicitud
 
         self.dic_solicitudes = self.data_managet._dict_solicitudes()
         self.inputs_extra = {}
-        self.i_values_extra={}
         
+
 
         self.ui = Ui_MainWindow()
         
         
+
         self.ui.setupUi(self)
         self.scene = QGraphicsScene(self)
         self.ui.display_pdf.setScene(self.scene)
@@ -71,11 +71,11 @@ class MiApp(QMainWindow):
         layout.setStretch(0, 0)
         layout.setStretch(1, 1)
         self.combos_box = [self.ui.cmbox_destino, self.ui.cmbox_origen, self.ui.cmbox_formato, self.ui.cmbox_tipo_unidad , self.ui.cobox_aduana]
-        
+
         self.form_manager =FormManager(self, self.ui.frame_5, self.data_managet)
-        
-        
-        
+
+        self._name_transfer = self.data_managet.get_data_transfer
+
         #self.pdf_item = QGraphicsPixmapItem()
         self.pdf_item = PDFGraphicsItem(self.on_pdf_click)
         self.scene.addItem(self.pdf_item)
@@ -121,16 +121,40 @@ class MiApp(QMainWindow):
 
         #inputs
         self.ui.input_Referencia.returnPressed.connect(self.focusNextChild)
+        self.ui.input_Referencia.setInputMask(">00A0000000;_")
         self.ui.input_Referencia.setPlaceholderText("Ingrese referencia 92B / 82B")
+        self.ui.input_Referencia.textChanged.connect(self.val_ref)
         self.ui.input_Referencia.setMaxLength(10)
+        
         
         self._tipo_unidad = self.ui.cmbox_tipo_unidad.currentText()
 
+        
+        
         if self.ui.cmbox_tipo_unidad or self.dic_solicitudes:
             QtCore.QTimer.singleShot(0, self.preparar_campos_por_unidad)
             QtCore.QTimer.singleShot(0, self.cambio_plantilla)
-
+            
+        if not self._referencia:
+            self.ui.btn_generar_pdf.setEnabled(False)
+            self.ui.btn_previsuzalizar.setEnabled(False)
+            
+    def val_ref(self):
+        val =False
+        self._referencia = self.ui.input_Referencia.text()
         
+        
+        if self.ui.input_Referencia.hasAcceptableInput() and self.data_managet.validar_Referencia(self._referencia):
+            self.ui.input_Referencia.setStyleSheet("border: 1px solid #27ae60;")
+            self.ui.btn_previsuzalizar.setEnabled(True)
+            self.ui.btn_generar_pdf.setEnabled(True)
+            val = True
+        else:
+            self.ui.input_Referencia.setStyleSheet("border: 1px solid #c0392b;")
+            self.ui.btn_generar_pdf.setEnabled(False)
+        return val
+    
+    
     def handle_error(func):
         def wrapper(self,*args,**kwargs):
             try:
@@ -188,20 +212,16 @@ class MiApp(QMainWindow):
         "destino" :self._destino,
         "direccion" : f"{d_estado} \n {d_calle}",
         "direccion_o":f"{o_estado} \n {o_calle}",
-        "gtr_entrega": f"{d_calle} {d_estado}"
+        "gtr_entrega": f"{d_calle} {d_estado}",
+        "scac":self.data_managet.get_transfer_scac(self.inputs_extra["linea_transporte"].currentText())
         }
         datos.update(self.return_values_dynamic(self.inputs_extra.items()))
         return datos
     
-    
+
     @handle_error
     def previsualizar_pdf(self):
-        self._referencia =self.ui.input_Referencia.text()
-
         
-        if not self.data_managet.validar_Referencia(self._referencia):
-            return
-
         
         datos =self.recolectar_formularios()
         solicitud_actual = self._tipo_solicitud[self.page_actual]
@@ -217,14 +237,15 @@ class MiApp(QMainWindow):
         from popout import TransferForm
         
         dialog_transfer = TransferForm(self)
-            
+
         if dialog_transfer.exec():
             scac = dialog_transfer.ui.scac_transfer.text()
             name_transfer = dialog_transfer.ui.name_linea_transfer.text()
-
-            self.data_managet.insert_new_transfer(name_transfer,scac)
-                
-        self.show_message("Exito","Transfer Guardado",f"El Patio {name_transfer} se registro correctamente","info")
+            
+            if scac and name_transfer:
+                self.data_managet.insert_new_transfer(name_transfer,scac)
+                self.inputs_extra["linea_transporte"].addItems(self._name_transfer)
+                self.show_message("Exito","Transfer Guardado",f"El Patio {name_transfer} se registro correctamente","info")
 
     @handle_error
     def popout_addres_form(self):
@@ -232,15 +253,23 @@ class MiApp(QMainWindow):
         dialog_adress = AdressForm(self)
 
         if dialog_adress.exec():
+            
             nombre_patio = dialog_adress.ui.name_yard.text()
             calle = dialog_adress.ui.input_calle.text()
             estado = dialog_adress.ui.input_municipio.text()
-             
             
-            self.data_managet.insert_new_address(nombre_patio,calle,estado)
-        self.show_message("Exito","Patio Guardado",f"El Patio {nombre_patio} se registro correctamente","info")
-
-    def cambio_plantilla(self ):
+            if nombre_patio and calle  and estado:
+                self.ui.cmbox_origen.addItems(self.data_managet.list_yard)
+                self.ui.cmbox_destino.addItems(self.data_managet.list_yard)
+                self.data_managet.insert_new_address(nombre_patio,calle,estado)
+                
+                self.show_message("Exito","Patio Guardado",f"El Patio {nombre_patio} se registro correctamente","info")
+    
+    
+    @handle_error
+    @QtCore.Slot(str)
+    def cambio_plantilla(self,text:str|None = None):
+        
         
         self._tipo_solicitud.clear()
         self._tipo_solicitud.append( self.ui.cmbox_formato.currentText())
@@ -262,18 +291,18 @@ class MiApp(QMainWindow):
            
                 self._tipo_solicitud.append("CHECKLIST")
                 self._tipo_solicitud.append("DELIVERY ORDER")
-              
             pdf_route = self.data_managet.obtener_ruta_solicitud(self._tipo_solicitud[self.page_actual])
             self.pdf_service.cargar_documento(pdf_route)
             self.total_paginas = len(self._tipo_solicitud)
-  
-            
             self.mostrar_pagina()
             
-            
         except Exception as e:
-            print(f"Error al cambiar de plantilla: \t {e}")
+            self.show_message("Error" ,
+                              "Error al cargar archivo PDF",
+                              f"El archivo {self._tipo_solicitud[self.page_actual]} no se cargo correctamente\n Error : {e}",
+                              "Error")
 
+            
     def nextpage(self):
         if self.page_actual < self.total_paginas - 1:
             self.page_actual += 1
@@ -447,9 +476,13 @@ class MiApp(QMainWindow):
         msg.setInformativeText(str(txt))
         msg.exec()
         
-
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MiApp()
+    window.setWindowTitle("Solicitud de Retiro Track & Trace")
     window.show()
     sys.exit(app.exec())
+    
+    
+    
+    
