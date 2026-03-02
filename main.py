@@ -15,8 +15,6 @@ from PySide6.QtWidgets import( QMessageBox ,
                               QGraphicsScene ,
                               QGraphicsPixmapItem,
 )
-import asyncio
-from core.edoc_command import EdocCommand
 
 class PDFGraphicsItem(QGraphicsPixmapItem):
     # Definimos una señal personalizada (necesita heredar de QObject para señales, 
@@ -34,6 +32,8 @@ class PDFGraphicsItem(QGraphicsPixmapItem):
 
 class MiApp(QMainWindow):
     def __init__(self):
+        from core.edoc_command import EdocCommand
+        
         super().__init__()
         self.pdf_service = PDFService()
         self.data_managet = DataManager()
@@ -53,7 +53,7 @@ class MiApp(QMainWindow):
         self._direccion_patio = ""
         self._scac = ""
         self.lista_solicitudes = self.data_managet.list_solicitud
-
+        self.date= ""
         self.dic_solicitudes = self.data_managet._dict_solicitudes()
         self.inputs_extra = {}
         
@@ -126,6 +126,8 @@ class MiApp(QMainWindow):
         self.ui.input_Referencia.textChanged.connect(self.val_ref)
         self.ui.input_Referencia.setMaxLength(10)
         
+        self.ui.btn_generar_pdf.setEnabled(False)
+        self.ui.btn_previsuzalizar.setEnabled(False)
         
         self._tipo_unidad = self.ui.cmbox_tipo_unidad.currentText()
 
@@ -135,10 +137,36 @@ class MiApp(QMainWindow):
             QtCore.QTimer.singleShot(0, self.preparar_campos_por_unidad)
             QtCore.QTimer.singleShot(0, self.cambio_plantilla)
             
-        if not self._referencia:
+        if not self._referencia and self.data_managet.validar_fecha(self.date):                   
             self.ui.btn_generar_pdf.setEnabled(False)
             self.ui.btn_previsuzalizar.setEnabled(False)
             
+    def update_combo_list(self):
+        # 1. Obtener listas actualizadas
+        patios = self.data_managet.list_yard
+        transfers = self.data_managet.get_data_transfer
+
+        # 2. Bloquear señales para evitar bucles o refrescos visuales pesados
+        self.ui.cmbox_origen.blockSignals(True)
+        self.ui.cmbox_destino.blockSignals(True)
+
+        # 3. Limpiar y rellenar Patios
+        self.ui.cmbox_origen.clear()
+        self.ui.cmbox_destino.clear()
+        self.ui.cmbox_origen.addItems(patios)
+        self.ui.cmbox_destino.addItems(patios)
+
+        self.ui.cmbox_origen.blockSignals(False)
+        self.ui.cmbox_destino.blockSignals(False)
+
+        # 4. Actualizar Transfer solo si el widget existe en el formulario dinámico
+        if "linea_transporte" in self.inputs_extra:
+            combo_transfer = self.inputs_extra["linea_transporte"]
+            combo_transfer.blockSignals(True)
+            combo_transfer.clear()
+            combo_transfer.addItems(transfers)
+            combo_transfer.blockSignals(False)
+        
     def val_ref(self):
         val =False
         self._referencia = self.ui.input_Referencia.text()
@@ -193,7 +221,8 @@ class MiApp(QMainWindow):
             else:
                 data_input[nombre_campo] =wdget.currentText()
         return data_input
-
+    
+    @handle_error
     def recolectar_formularios(self):
         self._destino = self.ui.cmbox_destino.currentText() 
         d_estado , d_calle  = self.data_managet.obtener_direccion(self._destino)
@@ -201,8 +230,11 @@ class MiApp(QMainWindow):
         self._origen = self.ui.cmbox_origen.currentText()
         self._aduana = self.ui.cobox_aduana.currentText() 
         o_estado , o_calle  = self.data_managet.obtener_direccion(self._origen)
+        self.date = self.inputs_extra["fecha"].text()
         
-
+        
+        
+        
         datos = {
         "referencia" :self._referencia,
         "aduana" :self._aduana,
@@ -239,13 +271,15 @@ class MiApp(QMainWindow):
         dialog_transfer = TransferForm(self)
 
         if dialog_transfer.exec():
-            scac = dialog_transfer.ui.scac_transfer.text()
-            name_transfer = dialog_transfer.ui.name_linea_transfer.text()
+            scac = dialog_transfer.ui.scac_transfer.text().strip()
+            name_transfer = dialog_transfer.ui.name_linea_transfer.text().strip()
             
             if scac and name_transfer:
                 self.data_managet.insert_new_transfer(name_transfer,scac)
-                self.inputs_extra["linea_transporte"].addItems(self._name_transfer)
+                self.update_combo_list()
                 self.show_message("Exito","Transfer Guardado",f"El Patio {name_transfer} se registro correctamente","info")
+                
+        
 
     @handle_error
     def popout_addres_form(self):
@@ -259,11 +293,12 @@ class MiApp(QMainWindow):
             estado = dialog_adress.ui.input_municipio.text()
             
             if nombre_patio and calle  and estado:
-                self.ui.cmbox_origen.addItems(self.data_managet.list_yard)
-                self.ui.cmbox_destino.addItems(self.data_managet.list_yard)
-                self.data_managet.insert_new_address(nombre_patio,calle,estado)
                 
+                self.data_managet.insert_new_address(nombre_patio,calle,estado)
+                self.update_combo_list()
                 self.show_message("Exito","Patio Guardado",f"El Patio {nombre_patio} se registro correctamente","info")
+                
+        
     
     
     @handle_error
@@ -294,7 +329,7 @@ class MiApp(QMainWindow):
             pdf_route = self.data_managet.obtener_ruta_solicitud(self._tipo_solicitud[self.page_actual])
             self.pdf_service.cargar_documento(pdf_route)
             self.total_paginas = len(self._tipo_solicitud)
-            self.mostrar_pagina()
+            self._show_data()
             
         except Exception as e:
             self.show_message("Error" ,
@@ -303,13 +338,22 @@ class MiApp(QMainWindow):
                               "Error")
 
             
+    def _show_data(self):
+        
+                
+        datos =self.recolectar_formularios()
+        solicitud_actual = self._tipo_solicitud[self.page_actual]
+        
+        self.pdf_service.escribir_campos(datos , self.data_managet.get_coord , solicitud_actual)
+        self.mostrar_pagina()
+                
     def nextpage(self):
         if self.page_actual < self.total_paginas - 1:
             self.page_actual += 1
             print(self._tipo_solicitud[self.page_actual])
             pdf_route = self.data_managet.obtener_ruta_solicitud(self._tipo_solicitud[self.page_actual])
             self.pdf_service.cargar_documento(pdf_route)
-            self.mostrar_pagina()
+            self._show_data()
     
     def previews_page(self):
             # Validar que no sea menor a 0
@@ -319,7 +363,7 @@ class MiApp(QMainWindow):
                 print(self._tipo_solicitud[self.page_actual])
                 pdf_route = self.data_managet.obtener_ruta_solicitud(self._tipo_solicitud[self.page_actual])
                 self.pdf_service.cargar_documento(pdf_route)
-                self.mostrar_pagina()
+                self._show_data()
        
         
     def mostrar_pagina(self):
@@ -384,6 +428,7 @@ class MiApp(QMainWindow):
                 
     @handle_error
     def guardar(self):
+        import asyncio
         
         async def procesar_edoc():
             for route in file_route:
@@ -398,7 +443,6 @@ class MiApp(QMainWindow):
             return
         
             
-        print(self._tipo_solicitud)
         try:
             for platilla in self._tipo_solicitud:
                 ruta_template = self.data_managet.obtener_ruta_solicitud(platilla)
