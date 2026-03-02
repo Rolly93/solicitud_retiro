@@ -34,12 +34,12 @@ class PDFService:
             if hasattr(self,'doc') and self.doc: self.doc.close()
         except Exception:
             pass
+        from core.data import get_pdf_path
         
-        
-        path = Path(ruta_pdf).resolve()
+        path = get_pdf_path(ruta_pdf) 
         
         if not path.exists():
-            raise FileNotFoundError(f"No se encontró el PDF en: {ruta_pdf}")
+            raise FileNotFoundError(f"No se encontró el PDF en: {ruta_pdf},\n{path}")
         
         self.doc = fitz.open(str(path))
         
