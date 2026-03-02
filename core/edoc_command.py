@@ -1,5 +1,4 @@
 import os
-#from dotenv import load_dotenv
 import time
 import time
 import asyncio
@@ -8,7 +7,7 @@ class EdocCommand:
     def __init__(self):
         #load_dotenv()
      
-        self._edoc = r"" #os.getenv("EDOC_VIEWER_PATH")
+        self._edoc = r""#Edoc Route from system 
 
     async    def _subir_edoc(self, ruta_archivo, referencia, key_type, document_type):
             ruta_abs = os.path.abspath(ruta_archivo)
