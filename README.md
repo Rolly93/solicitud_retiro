@@ -1,7 +1,7 @@
 # 📦 Sistema de Gestión de Solicitudes de Retiro (WWS)
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python&logoColor=white)
-![Status](https://img.shields.io/badge/Status-Producción-green?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Completado-brightgreen?style=for-the-badge)
 ![UI](https://img.shields.io/badge/UI-PySide6-orange?style=for-the-badge)
 ![Focus](https://img.shields.io/badge/Focus-Logística_%26_Automatización-green?style=for-the-badge)
 
@@ -62,4 +62,5 @@ Con la implementación de esta herramienta, se proyecta:
 
 ---
 **Desarrollado por [Rolando Rios](https://www.linkedin.com/in/rolando-guadalupe-rios-lopez-14090623b/)** *Ingeniero en Sistemas enfocado en Soluciones Logísticas.*
+
 
